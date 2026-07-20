@@ -69,6 +69,15 @@ describe("attention engine", () => {
     expect(item.urgency).toBe("quiet");
   });
 
+  it("exposes a persisted follow marker without changing semantic state", () => {
+    const persisted = state();
+    persisted.threadPreferences["thread-1"] = { pinned: true };
+    const item = deriveAttentionItem(thread(), persisted, now);
+
+    expect(item.isFollowed).toBe(true);
+    expect(item.state).toBe("parked");
+  });
+
   it("batches a recently completed turn for review", () => {
     const persisted = state();
     persisted.threadPreferences["thread-1"] = { pendingReviewTurnId: "turn-1" };

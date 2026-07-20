@@ -42,6 +42,11 @@ export const api = {
       method: "POST",
       body: "{}",
     }),
+  follow: (threadId: string, followed: boolean) =>
+    request<DepthlineSnapshot>(`/api/items/${encodeURIComponent(threadId)}/follow`, {
+      method: "POST",
+      body: JSON.stringify({ followed }),
+    }),
   open: (threadId: string) =>
     request<{ ok: true; opened: "thread" }>(`/api/items/${encodeURIComponent(threadId)}/open`, {
       method: "POST",

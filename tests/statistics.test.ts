@@ -16,6 +16,7 @@ function item(id: string, state: AttentionItem["state"], project: string): Atten
     ageMinutes: 0,
     capsule: { goal: "", latest: "", nextAction: "" },
     isFocused: false,
+    isFollowed: false,
   };
 }
 

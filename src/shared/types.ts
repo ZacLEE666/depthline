@@ -28,6 +28,7 @@ export interface AttentionItem {
   capsule: ContextCapsule;
   snoozedUntil?: string;
   isFocused: boolean;
+  isFollowed: boolean;
 }
 
 export interface FocusSession {

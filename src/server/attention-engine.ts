@@ -182,6 +182,7 @@ export function deriveAttentionItem(
     isFocused:
       state.focus?.threadId === thread.id &&
       Boolean(state.focus?.until && new Date(state.focus.until).getTime() > now.getTime()),
+    isFollowed: Boolean(preference.pinned),
   };
 }
 

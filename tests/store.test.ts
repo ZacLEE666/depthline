@@ -27,4 +27,18 @@ describe("LocalStateStore", () => {
     expect(raw).not.toContain("prompt");
     expect((await store.read()).threadPreferences["thread-1"]?.handledAt).toBeTruthy();
   });
+
+  it("persists followed conversations as metadata", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "depthline-follow-test-"));
+    directories.push(directory);
+    const store = new LocalStateStore(directory);
+
+    await store.update((state) => {
+      state.threadPreferences["daily-plan"] = { pinned: true };
+    });
+
+    const saved = await store.read();
+    expect(saved.threadPreferences["daily-plan"]?.pinned).toBe(true);
+    expect(await readFile(store.filePath, "utf8")).not.toContain("conversation content");
+  });
 });

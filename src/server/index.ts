@@ -168,7 +168,7 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
     return true;
   }
 
-  const actionMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/(snooze|handled|open)$/);
+  const actionMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/(snooze|handled|follow|open)$/);
   if (request.method === "POST" && actionMatch) {
     const threadId = decodeURIComponent(actionMatch[1]);
     const action = actionMatch[2];
@@ -199,6 +199,15 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
             state.threadPreferences[threadId]?.pendingReviewTurnId === completedTurnId
               ? undefined
               : state.threadPreferences[threadId]?.pendingReviewTurnId,
+        };
+      });
+    } else if (action === "follow") {
+      const body = await bodyJson(request);
+      const followed = body.followed === true;
+      await updateState((state) => {
+        state.threadPreferences[threadId] = {
+          ...state.threadPreferences[threadId],
+          pinned: followed,
         };
       });
     } else if (action === "open") {

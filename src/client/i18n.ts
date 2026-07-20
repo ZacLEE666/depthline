@@ -23,6 +23,12 @@ export interface Copy {
   protectThread: string;
   handled: string;
   snooze30: string;
+  follow: string;
+  unfollow: string;
+  followedSection: string;
+  followedHeading: string;
+  followedCount: (count: number) => string;
+  noFollowed: string;
   loading: string;
   refreshFailed: string;
   actionFailed: string;
@@ -124,6 +130,12 @@ export const copy: Record<Locale, Copy> = {
     protectThread: "Protect this thread",
     handled: "Handled",
     snooze30: "30m",
+    follow: "Follow this task",
+    unfollow: "Stop following",
+    followedSection: "Following",
+    followedHeading: "Conversations kept in view",
+    followedCount: (count) => `${count} followed`,
+    noFollowed: "Use the star on any task to keep important conversations here.",
     loading: "Listening for the moments that actually need you.",
     refreshFailed: "Depthline could not refresh.",
     actionFailed: "The action failed.",
@@ -225,6 +237,12 @@ export const copy: Record<Locale, Copy> = {
     protectThread: "保护这条思路",
     handled: "已处理",
     snooze30: "30 分钟后",
+    follow: "持续关注",
+    unfollow: "取消关注",
+    followedSection: "持续关注",
+    followedHeading: "长期放在视野中的对话",
+    followedCount: (count) => `${count} 项关注`,
+    noFollowed: "点击任意事项右上角的星标，把日程和工作重点等对话固定在这里。",
     loading: "正在识别真正需要你介入的时刻。",
     refreshFailed: "Depthline 暂时无法刷新。",
     actionFailed: "操作未能完成。",

@@ -14,6 +14,7 @@ import {
   Play,
   RefreshCw,
   ShieldCheck,
+  Star,
   TimerReset,
 } from "lucide-react";
 import { api } from "./api";
@@ -55,12 +56,12 @@ function StateIcon({ state }: { state: AttentionState }) {
 
 interface ItemCardProps {
   item: AttentionItem;
-  variant?: "decision" | "quiet" | "review";
+  variant?: "decision" | "quiet" | "review" | "follow";
   busy: boolean;
   opening: boolean;
   locale: Locale;
   messages: Copy;
-  onAction: (action: "focus" | "snooze" | "handled" | "open", item: AttentionItem) => void;
+  onAction: (action: "focus" | "snooze" | "handled" | "follow" | "open", item: AttentionItem) => void;
 }
 
 function ItemCard({ item, variant = "decision", busy, opening, locale, messages, onAction }: ItemCardProps) {
@@ -71,7 +72,20 @@ function ItemCard({ item, variant = "decision", busy, opening, locale, messages,
           <StateIcon state={item.state} />
           {messages.stateLabels[item.state]}
         </span>
-        <span className="item-time">{formatRelativeTime(item.updatedAt, locale)}</span>
+        <div className="item-top-actions">
+          <span className="item-time">{formatRelativeTime(item.updatedAt, locale)}</span>
+          <button
+            type="button"
+            className={`follow-toggle ${item.isFollowed ? "follow-toggle--active" : ""}`}
+            aria-label={item.isFollowed ? messages.unfollow : messages.follow}
+            title={item.isFollowed ? messages.unfollow : messages.follow}
+            aria-pressed={item.isFollowed}
+            disabled={busy}
+            onClick={() => onAction("follow", item)}
+          >
+            <Star size={13} fill={item.isFollowed ? "currentColor" : "none"} />
+          </button>
+        </div>
       </div>
       <div>
         <p className="item-project">{item.project}</p>
@@ -266,6 +280,7 @@ export function App() {
     () => snapshot?.items.filter((item) => !item.snoozedUntil) ?? [],
     [snapshot],
   );
+  const followed = snapshot?.items.filter((item) => item.isFollowed) ?? [];
   const decisions = visibleItems.filter((item) => item.urgency === "blocking");
   const working = visibleItems.filter((item) => item.state === "working");
   const reviews = visibleItems.filter((item) => item.state === "ready_review");
@@ -273,7 +288,7 @@ export function App() {
     visibleItems.find((item) => item.isFocused) ?? decisions[0] ?? working[0] ?? reviews[0];
 
   const runAction = async (
-    action: "focus" | "snooze" | "handled" | "open",
+    action: "focus" | "snooze" | "handled" | "follow" | "open",
     item: AttentionItem,
   ) => {
     setBusy(true);
@@ -289,7 +304,9 @@ export function App() {
             ? await api.startFocus(50, item.id)
             : action === "snooze"
               ? await api.snooze(item.id)
-              : await api.handled(item.id);
+              : action === "follow"
+                ? await api.follow(item.id, !item.isFollowed)
+                : await api.handled(item.id);
         setSnapshot(next);
       }
       setError(undefined);
@@ -385,6 +402,25 @@ export function App() {
               <button className="button button--primary" disabled={busy} onClick={() => void runFocus("start", primaryThread?.id)}><Play size={15} /> {messages.compactStartFocus}</button>
             )}
           </div>
+        </section>
+
+        <section className={`section-block section-block--followed ${followed.length ? "" : "section-block--empty"}`}>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow eyebrow--ink"><Star size={14} fill="currentColor" /> {messages.followedSection}</p>
+              <h2>{messages.followedHeading}</h2>
+            </div>
+            <span>{messages.followedCount(followed.length)}</span>
+          </div>
+          {followed.length ? (
+            <div className="follow-grid">
+              {followed.map((item) => (
+                <ItemCard key={item.id} item={item} variant="follow" busy={busy} opening={openingItemId === item.id} locale={locale} messages={messages} onAction={runAction} />
+              ))}
+            </div>
+          ) : (
+            <EmptyLane>{messages.noFollowed}</EmptyLane>
+          )}
         </section>
 
         <section className={`section-block ${decisions.length ? "" : "section-block--empty"}`}>
