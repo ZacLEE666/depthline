@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildSnapshot,
   deriveAttentionItem,
+  displayTitle,
   observeThreadTransitions,
 } from "../src/server/attention-engine.js";
 import type { CodexThread } from "../src/server/codex-types.js";
@@ -35,6 +36,16 @@ function state(): PersistedState {
 }
 
 describe("attention engine", () => {
+  it("turns an AI-generated summary into a compact task title", () => {
+    expect(displayTitle(
+      "AI总结 双方讨论候选人学历破格录用可能性，重点分析其广州属地化工作与异地团队的协同难题。涉及产品经理岗位适配性评估。",
+    )).toBe("候选人学历破格录用可能性 · 广州属地化工作与异地团队的协同难题");
+  });
+
+  it("caps ordinary task titles before they can dominate a card", () => {
+    expect(displayTitle("A".repeat(80))).toBe(`${"A".repeat(47)}…`);
+  });
+
   it("routes a user-input wait to the blocking inbox", () => {
     const item = deriveAttentionItem(
       thread({ status: { type: "active", activeFlags: ["waitingOnUserInput"] } }),

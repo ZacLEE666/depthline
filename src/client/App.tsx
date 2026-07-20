@@ -74,7 +74,7 @@ function ItemCard({ item, variant = "decision", busy, opening, locale, messages,
       </div>
       <div>
         <p className="item-project">{item.project}</p>
-        <h3>{item.title}</h3>
+        <h3 title={item.title}>{item.title}</h3>
       </div>
       {variant !== "quiet" && (
         <div className="capsule">

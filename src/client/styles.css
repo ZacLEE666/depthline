@@ -84,11 +84,11 @@ button:focus-visible { outline: 3px solid rgba(239, 130, 111, 0.45); outline-off
 .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .quiet-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.item-card { min-width: 0; background: var(--paper-light); border: 1px solid #e2ddd1; padding: 18px; min-height: 286px; display: flex; flex-direction: column; border-radius: 3px 3px 18px 3px; box-shadow: 0 8px 24px rgba(27, 54, 53, 0.03); }
+.item-card { min-width: 0; background: var(--paper-light); border: 1px solid #e2ddd1; padding: 16px; min-height: 270px; display: flex; flex-direction: column; border-radius: 3px 3px 18px 3px; box-shadow: 0 8px 24px rgba(27, 54, 53, 0.03); }
 .item-card--decision { border-top: 3px solid var(--coral); }
 .item-card--review { border-top: 3px solid var(--gold); }
-.item-card--quiet { min-height: 184px; border-top: 3px solid #79b49d; background: rgba(251, 250, 246, 0.65); }
-.item-topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.item-card--quiet { min-height: 154px; border-top: 3px solid #79b49d; background: rgba(251, 250, 246, 0.65); }
+.item-topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
 .state-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .state-pill--needs_input, .state-pill--error { color: #a43e31; }
 .state-pill--needs_approval { color: #7b5817; }
@@ -96,7 +96,8 @@ button:focus-visible { outline: 3px solid rgba(239, 130, 111, 0.45); outline-off
 .state-pill--working { color: #2d725a; }
 .item-time, .item-project { color: #798988; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .item-project { margin: 0 0 5px; text-transform: uppercase; letter-spacing: 0.08em; }
-.item-card h3 { margin: 0; font-family: Iowan Old Style, Baskerville, Georgia, serif; font-size: 22px; line-height: 1.12; letter-spacing: -0.025em; font-weight: 600; }
+.item-card h3 { margin: 0; min-height: 2.4em; font-family: Iowan Old Style, Baskerville, Georgia, serif; font-size: 20px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.item-card--quiet h3 { font-size: 17px; line-height: 1.25; min-height: 2.5em; }
 .capsule { min-width: 0; margin: 16px 0; display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(132px, 0.75fr); gap: 16px; }
 .capsule > div { min-width: 0; }
 .capsule span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; color: #84908d; letter-spacing: 0.09em; font-size: 9px; }

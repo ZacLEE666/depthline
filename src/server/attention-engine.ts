@@ -34,6 +34,31 @@ function trimText(value: string | undefined, max = 180): string {
   return compact.length > max ? `${compact.slice(0, max - 1)}…` : compact;
 }
 
+export function displayTitle(value: string | undefined): string {
+  const compact = (value ?? "").replace(/\s+/g, " ").trim();
+  if (!compact) return "Untitled Codex task";
+
+  const isGeneratedSummary = /^AI总结[：:\s]*/i.test(compact);
+  const withoutPrefix = compact.replace(/^AI总结[：:\s]*/i, "");
+  if (isGeneratedSummary) {
+    const clauses = withoutPrefix
+      .split(/[，。；！？!?]/)
+      .map((clause) =>
+        clause
+          .replace(/^(双方)?讨论/, "")
+          .replace(/^重点分析(其)?/, "")
+          .replace(/^涉及/, "")
+          .replace(/^对话聚焦/, "")
+          .trim(),
+      )
+      .filter(Boolean);
+    return trimText(clauses.slice(0, 2).join(" · ") || withoutPrefix, 42);
+  }
+
+  const firstSentence = withoutPrefix.split(/[。！？!?\n]/)[0]?.trim() || withoutPrefix;
+  return trimText(firstSentence, 48);
+}
+
 function classify(
   thread: CodexThread,
   pendingReviewTurnId?: string,
@@ -124,7 +149,7 @@ export function deriveAttentionItem(
   const snoozed = preference.snoozedUntil
     ? new Date(preference.snoozedUntil).getTime() > now.getTime()
     : false;
-  const title = trimText(thread.name || thread.preview, 88);
+  const title = displayTitle(thread.name || thread.preview);
   const latest = trimText(lastAgentMessage(thread) || thread.preview);
   const stateResult = snoozed
     ? { ...classification, urgency: "quiet" as const, score: 0 }
