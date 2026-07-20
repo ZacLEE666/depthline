@@ -86,6 +86,7 @@ model to decide when to interrupt you.
 - The server binds to `127.0.0.1`, not the network.
 - Depthline makes no outbound network requests.
 - It never reads Codex credentials or private SQLite tables.
+- It reads only lifecycle marker types from the tail of local Codex rollout files to detect running and completed work; message content is neither extracted nor persisted.
 - It never automatically approves a Codex action.
 - It stores only focus, snooze, handled, and thread identifier metadata in `~/.depthline/state.json`.
 - Browser assets are bundled; there are no remote fonts, analytics, or tracking pixels.
@@ -96,7 +97,7 @@ See [docs/PRIVACY.md](docs/PRIVACY.md) and [SECURITY.md](SECURITY.md).
 
 Depthline uses the official local `codex app-server` JSONL protocol instead of reverse-engineering Codex's private state database. The app-server is currently marked **experimental** by Codex and may change. Protocol-specific code is isolated in `src/server/codex-client.ts`, and Depthline falls back to an explicit sample workspace if the adapter cannot connect.
 
-V0.1 launches its own app-server process. It reliably discovers recent tasks and completed turns, but live `working` and `waiting` signals from a separately running Codex app can depend on the current Codex build. A shared event stream is the highest-priority adapter improvement on the roadmap; Depthline does not hide this limitation by reading private databases.
+V0.1 launches its own app-server process for thread metadata and watches lifecycle markers in local rollout tails for live `working` and `completed` transitions. The browser receives snapshots over a local Server-Sent Events stream, so task movement does not require a page refresh. Approval and user-input wait signals still depend on the Codex app-server protocol and may vary by Codex build; protocol-specific behavior remains isolated in the adapter.
 
 ## Architecture
 

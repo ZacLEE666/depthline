@@ -4,6 +4,7 @@ import http, { type IncomingMessage, type ServerResponse } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSnapshot, observeThreadTransitions } from "./attention-engine.js";
+import { CodexActivityMonitor } from "./codex-activity.js";
 import { CodexAppServerClient } from "./codex-client.js";
 import { openCodexThread } from "./codex-launcher.js";
 import type { CodexThread } from "./codex-types.js";
@@ -13,11 +14,13 @@ import type { DepthlineSnapshot, PersistedState } from "../shared/types.js";
 
 const PORT = Number(process.env.DEPTHLINE_PORT || 4545);
 const HOST = "127.0.0.1";
-const POLL_MS = 4_000;
+const POLL_MS = 2_000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const clientRoot = path.resolve(__dirname, "../../client");
 const store = new LocalStateStore();
 const codex = new CodexAppServerClient();
+const activityMonitor = new CodexActivityMonitor();
+const eventClients = new Set<ServerResponse>();
 
 let threads: CodexThread[] = [];
 let persistedState: PersistedState = await store.read();
@@ -31,6 +34,15 @@ function snapshot(): DepthlineSnapshot {
   return buildSnapshot(threads, persistedState, { mode, connection, warning });
 }
 
+function sendEvent(response: ServerResponse, event: string, data: unknown): void {
+  response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+function broadcastSnapshot(): void {
+  const current = snapshot();
+  for (const response of eventClients) sendEvent(response, "snapshot", current);
+}
+
 async function refresh(): Promise<void> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
@@ -41,7 +53,7 @@ async function refresh(): Promise<void> {
     }
     try {
       await codex.start();
-      const nextThreads = await codex.listThreads();
+      const nextThreads = await activityMonitor.apply(await codex.listThreads());
       await updateState((state) => {
         observeThreadTransitions(nextThreads, state);
       });
@@ -57,6 +69,7 @@ async function refresh(): Promise<void> {
         error instanceof Error ? error.message : String(error)
       }`;
     }
+    broadcastSnapshot();
   })().finally(() => {
     refreshPromise = undefined;
   });
@@ -113,6 +126,19 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
     json(response, 200, snapshot());
     return true;
   }
+  if (request.method === "GET" && url.pathname === "/api/events") {
+    response.writeHead(200, {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-cache, no-transform",
+      connection: "keep-alive",
+      "x-accel-buffering": "no",
+    });
+    response.flushHeaders();
+    eventClients.add(response);
+    sendEvent(response, "snapshot", snapshot());
+    request.on("close", () => eventClients.delete(response));
+    return true;
+  }
   if (request.method === "GET" && url.pathname === "/api/health") {
     json(response, 200, { ok: true, mode, connection, codexThreads: threads.length });
     return true;
@@ -130,6 +156,7 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
       state.focus = { until: new Date(Date.now() + minutes * 60_000).toISOString(), threadId };
     });
     json(response, 200, snapshot());
+    broadcastSnapshot();
     return true;
   }
   if (request.method === "DELETE" && url.pathname === "/api/focus") {
@@ -137,6 +164,7 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
       delete state.focus;
     });
     json(response, 200, snapshot());
+    broadcastSnapshot();
     return true;
   }
 
@@ -189,6 +217,7 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
       return true;
     }
     json(response, 200, snapshot());
+    broadcastSnapshot();
     return true;
   }
 

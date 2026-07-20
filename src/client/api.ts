@@ -15,6 +15,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   snapshot: () => request<DepthlineSnapshot>("/api/snapshot"),
+  subscribe: (
+    onSnapshot: (snapshot: DepthlineSnapshot) => void,
+    onError: () => void,
+  ) => {
+    const events = new EventSource("/api/events");
+    events.addEventListener("snapshot", (event) => {
+      onSnapshot(JSON.parse((event as MessageEvent<string>).data) as DepthlineSnapshot);
+    });
+    events.onerror = onError;
+    return () => events.close();
+  },
   startFocus: (minutes: number, threadId?: string) =>
     request<DepthlineSnapshot>("/api/focus", {
       method: "POST",

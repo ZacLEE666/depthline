@@ -163,8 +163,13 @@ export function App() {
 
   useEffect(() => {
     void load();
-    const interval = window.setInterval(() => void load(), 4_000);
-    return () => window.clearInterval(interval);
+    return api.subscribe(
+      (next) => {
+        setSnapshot(next);
+        setError(undefined);
+      },
+      () => setError(messages.refreshFailed),
+    );
   }, [load]);
 
   const visibleItems = useMemo(

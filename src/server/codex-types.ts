@@ -28,6 +28,7 @@ export interface CodexThread {
   createdAt: number;
   updatedAt: number;
   turns: CodexTurn[];
+  rolloutPath?: string | null;
 }
 
 export interface CodexThreadListResponse {
