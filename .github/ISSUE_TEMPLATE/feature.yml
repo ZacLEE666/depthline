@@ -1,0 +1,24 @@
+name: Product proposal
+description: Propose a change that reduces attention loss.
+title: "[Proposal]: "
+labels: [proposal]
+body:
+  - type: textarea
+    id: interruption
+    attributes:
+      label: Which attention cost does this remove?
+      description: Describe the monitoring, interruption, or context-recovery problem.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What happens today?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What observable outcome should change?
+    validations:
+      required: true

@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a reproducible Depthline problem without sharing private agent content.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not paste prompts, responses, credentials, or private file paths."
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Describe the visible behavior and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Depthline and Codex versions
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options: [Codex, Demo]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Safe reproduction steps
+    validations:
+      required: true
