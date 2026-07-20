@@ -18,24 +18,14 @@ import {
 } from "lucide-react";
 import { api } from "./api";
 import type { AttentionItem, AttentionState, DepthlineSnapshot } from "../shared/types";
-
-const stateLabels: Record<AttentionState, string> = {
-  needs_input: "Needs your judgment",
-  needs_approval: "Approval requested",
-  error: "Needs recovery",
-  ready_review: "Ready for review",
-  working: "Working quietly",
-  parked: "Parked",
-};
-
-function relativeTime(date: string): string {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 60_000));
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
+import {
+  copy,
+  formatRelativeTime,
+  localizeRuntimeMessage,
+  resolveLocale,
+  type Copy,
+  type Locale,
+} from "./i18n";
 
 function focusMinutes(snapshot: DepthlineSnapshot): number {
   if (!snapshot.focus.until) return 0;
@@ -66,18 +56,20 @@ interface ItemCardProps {
   item: AttentionItem;
   variant?: "decision" | "quiet" | "review";
   busy: boolean;
+  locale: Locale;
+  messages: Copy;
   onAction: (action: "focus" | "snooze" | "handled" | "open", item: AttentionItem) => void;
 }
 
-function ItemCard({ item, variant = "decision", busy, onAction }: ItemCardProps) {
+function ItemCard({ item, variant = "decision", busy, locale, messages, onAction }: ItemCardProps) {
   return (
     <article className={`item-card item-card--${variant}`}>
       <div className="item-topline">
         <span className={`state-pill state-pill--${item.state}`}>
           <StateIcon state={item.state} />
-          {stateLabels[item.state]}
+          {messages.stateLabels[item.state]}
         </span>
-        <span className="item-time">{relativeTime(item.updatedAt)}</span>
+        <span className="item-time">{formatRelativeTime(item.updatedAt, locale)}</span>
       </div>
       <div>
         <p className="item-project">{item.project}</p>
@@ -86,33 +78,33 @@ function ItemCard({ item, variant = "decision", busy, onAction }: ItemCardProps)
       {variant !== "quiet" && (
         <div className="capsule">
           <div>
-            <span>Latest</span>
+            <span>{messages.latest}</span>
             <p>{item.capsule.latest}</p>
           </div>
           <div>
-            <span>Next human move</span>
-            <p>{item.capsule.nextAction}</p>
+            <span>{messages.nextHumanMove}</span>
+            <p>{messages.nextActions[item.state]}</p>
           </div>
         </div>
       )}
       <div className="item-actions">
         {variant !== "quiet" && (
           <button className="button button--primary" disabled={busy} onClick={() => onAction("open", item)}>
-            Open in Codex <ArrowUpRight size={15} />
+            {messages.openInCodex} <ArrowUpRight size={15} />
           </button>
         )}
         {variant === "quiet" && (
           <button className="button button--ghost" disabled={busy} onClick={() => onAction("focus", item)}>
-            <Focus size={15} /> Protect this thread
+            <Focus size={15} /> {messages.protectThread}
           </button>
         )}
         {variant === "review" && (
           <button className="button button--ghost" disabled={busy} onClick={() => onAction("handled", item)}>
-            <Check size={15} /> Handled
+            <Check size={15} /> {messages.handled}
           </button>
         )}
         <button className="button button--ghost" disabled={busy} onClick={() => onAction("snooze", item)}>
-          <Clock3 size={15} /> 30m
+          <Clock3 size={15} /> {messages.snooze30}
         </button>
       </div>
     </article>
@@ -128,20 +120,33 @@ function EmptyLane({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LoadingScreen() {
+function LoadingScreen({ messages }: { messages: Copy }) {
   return (
     <main className="loading-screen">
       <Logo />
       <div className="loading-line" />
-      <p>Listening for the moments that actually need you.</p>
+      <p>{messages.loading}</p>
     </main>
   );
 }
 
 export function App() {
+  const [locale, setLocale] = useState<Locale>(() =>
+    resolveLocale(window.localStorage.getItem("depthline.locale"), window.navigator.language),
+  );
   const [snapshot, setSnapshot] = useState<DepthlineSnapshot>();
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const messages = copy[locale];
+
+  useEffect(() => {
+    window.localStorage.setItem("depthline.locale", locale);
+    document.documentElement.lang = locale;
+    document.title = messages.documentTitle;
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute("content", messages.documentDescription);
+  }, [locale, messages]);
 
   const load = useCallback(async () => {
     try {
@@ -149,9 +154,9 @@ export function App() {
       setSnapshot(next);
       setError(undefined);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Depthline could not refresh.");
+      setError(cause instanceof Error ? cause.message : messages.refreshFailed);
     }
-  }, []);
+  }, [messages.refreshFailed]);
 
   useEffect(() => {
     void load();
@@ -186,7 +191,7 @@ export function App() {
       setSnapshot(next);
       setError(undefined);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The action failed.");
+      setError(cause instanceof Error ? cause.message : messages.actionFailed);
     } finally {
       setBusy(false);
     }
@@ -199,13 +204,13 @@ export function App() {
       setSnapshot(next);
       setError(undefined);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The focus action failed.");
+      setError(cause instanceof Error ? cause.message : messages.focusActionFailed);
     } finally {
       setBusy(false);
     }
   };
 
-  if (!snapshot) return <LoadingScreen />;
+  if (!snapshot) return <LoadingScreen messages={messages} />;
 
   const remaining = focusMinutes(snapshot);
 
@@ -215,15 +220,31 @@ export function App() {
         <Logo />
         <div className="topbar-meta">
           <span className={`connection-dot connection-dot--${snapshot.connection}`} />
-          <span>{snapshot.mode === "codex" ? "Local Codex" : "Sample workspace"}</span>
-          <span className="privacy-label"><ShieldCheck size={14} /> local-only</span>
+          <span>{snapshot.mode === "codex" ? messages.localCodex : messages.sampleWorkspace}</span>
+          <span className="privacy-label"><ShieldCheck size={14} /> {messages.localOnly}</span>
+          <div className="language-switch" role="group" aria-label={messages.languageLabel}>
+            <button
+              type="button"
+              aria-pressed={locale === "zh-CN"}
+              onClick={() => setLocale("zh-CN")}
+            >
+              中文
+            </button>
+            <button
+              type="button"
+              aria-pressed={locale === "en"}
+              onClick={() => setLocale("en")}
+            >
+              EN
+            </button>
+          </div>
         </div>
       </header>
 
       {(snapshot.warning || error) && (
         <div className="notice" role="status">
           <CircleAlert size={17} />
-          <span>{error || snapshot.warning}</span>
+          <span>{localizeRuntimeMessage(error || snapshot.warning || "", locale)}</span>
         </div>
       )}
 
@@ -232,22 +253,22 @@ export function App() {
           <div className="focus-copy">
             <p className="eyebrow">
               {snapshot.focus.active ? <MoonStar size={16} /> : <Sparkles size={16} />}
-              {snapshot.focus.active ? "Depth protected" : "Human attention is the control plane"}
+              {snapshot.focus.active ? messages.depthProtected : messages.attentionControlPlane}
             </p>
             <h1>
               {snapshot.focus.active
-                ? `${remaining} minutes without shallow switching.`
-                : "Let the agents run. Keep one thought alive."}
+                ? messages.focusTitle(remaining)
+                : messages.idleTitle}
             </h1>
             <p className="hero-support">
               {snapshot.focus.active
-                ? `${snapshot.focus.suppressedCount} non-blocking work items are staying quiet. Only a genuine decision should reach you.`
-                : "Depthline separates real human decisions from progress noise, then restores the context when you choose to return."}
+                ? messages.focusSupport(snapshot.focus.suppressedCount)
+                : messages.idleSupport}
             </p>
             <div className="hero-actions">
               {snapshot.focus.active ? (
                 <button className="button button--light" disabled={busy} onClick={() => void runFocus("stop")}>
-                  <TimerReset size={17} /> End focus session
+                  <TimerReset size={17} /> {messages.endFocus}
                 </button>
               ) : (
                 <>
@@ -256,21 +277,21 @@ export function App() {
                     disabled={busy}
                     onClick={() => void runFocus("start", primaryThread?.id)}
                   >
-                    <Play size={17} /> Start 50-minute depth block
+                    <Play size={17} /> {messages.startFocus}
                   </button>
-                  <span className="hero-hint"><BellOff size={15} /> Batch everything non-blocking</span>
+                  <span className="hero-hint"><BellOff size={15} /> {messages.batchNonBlocking}</span>
                 </>
               )}
             </div>
           </div>
-          <div className="bandwidth-card" aria-label="Human bandwidth summary">
-            <span className="bandwidth-label">Human bandwidth</span>
+          <div className="bandwidth-card" aria-label={messages.bandwidthAria}>
+            <span className="bandwidth-label">{messages.humanBandwidth}</span>
             <strong>{snapshot.summary.needsYou}</strong>
-            <span>{snapshot.summary.needsYou === 1 ? "decision needs" : "decisions need"} you now</span>
+            <span>{messages.decisionsNeedYou(snapshot.summary.needsYou)}</span>
             <div className="bandwidth-breakdown">
-              <div><span>Quietly working</span><b>{snapshot.summary.workingQuietly}</b></div>
-              <div><span>Batch review</span><b>{snapshot.summary.readyForReview}</b></div>
-              <div><span>Parked</span><b>{snapshot.summary.parked}</b></div>
+              <div><span>{messages.quietlyWorking}</span><b>{snapshot.summary.workingQuietly}</b></div>
+              <div><span>{messages.batchReview}</span><b>{snapshot.summary.readyForReview}</b></div>
+              <div><span>{messages.parked}</span><b>{snapshot.summary.parked}</b></div>
             </div>
           </div>
         </section>
@@ -278,57 +299,57 @@ export function App() {
         <section className="section-block">
           <div className="section-heading">
             <div>
-              <p className="eyebrow eyebrow--ink"><CircleAlert size={15} /> Decision inbox</p>
-              <h2>Only the moments that require a human</h2>
+              <p className="eyebrow eyebrow--ink"><CircleAlert size={15} /> {messages.decisionInbox}</p>
+              <h2>{messages.decisionHeading}</h2>
             </div>
-            <span>{decisions.length} blocking</span>
+            <span>{messages.blockingCount(decisions.length)}</span>
           </div>
           {decisions.length ? (
             <div className="decision-grid">
               {decisions.map((item) => (
-                <ItemCard key={item.id} item={item} busy={busy} onAction={runAction} />
+                <ItemCard key={item.id} item={item} busy={busy} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (
-            <EmptyLane>No agent needs your judgment right now.</EmptyLane>
+            <EmptyLane>{messages.noDecision}</EmptyLane>
           )}
         </section>
 
         <section className="section-block section-block--quiet">
           <div className="section-heading">
             <div>
-              <p className="eyebrow eyebrow--ink"><LoaderCircle size={15} /> Quiet lane</p>
-              <h2>Work that should not occupy your mind</h2>
+              <p className="eyebrow eyebrow--ink"><LoaderCircle size={15} /> {messages.quietLane}</p>
+              <h2>{messages.quietHeading}</h2>
             </div>
-            <span>{working.length} running</span>
+            <span>{messages.runningCount(working.length)}</span>
           </div>
           {working.length ? (
             <div className="quiet-grid">
               {working.map((item) => (
-                <ItemCard key={item.id} item={item} variant="quiet" busy={busy} onAction={runAction} />
+                <ItemCard key={item.id} item={item} variant="quiet" busy={busy} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (
-            <EmptyLane>No background work is running.</EmptyLane>
+            <EmptyLane>{messages.noBackground}</EmptyLane>
           )}
         </section>
 
         <section className="section-block">
           <div className="section-heading">
             <div>
-              <p className="eyebrow eyebrow--ink"><Check size={15} /> Review batch</p>
-              <h2>Return when your current thought is complete</h2>
+              <p className="eyebrow eyebrow--ink"><Check size={15} /> {messages.reviewBatch}</p>
+              <h2>{messages.reviewHeading}</h2>
             </div>
-            <span>{reviews.length} ready</span>
+            <span>{messages.readyCount(reviews.length)}</span>
           </div>
           {reviews.length ? (
             <div className="review-grid">
               {reviews.map((item) => (
-                <ItemCard key={item.id} item={item} variant="review" busy={busy} onAction={runAction} />
+                <ItemCard key={item.id} item={item} variant="review" busy={busy} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (
-            <EmptyLane>No completed work is waiting for review.</EmptyLane>
+            <EmptyLane>{messages.noReview}</EmptyLane>
           )}
         </section>
       </main>
@@ -336,9 +357,9 @@ export function App() {
       <footer>
         <div>
           <Logo />
-          <p>Protect human depth in the age of parallel intelligence.</p>
+          <p>{messages.footerVision}</p>
         </div>
-        <p>Raw Codex content stays in memory and is never persisted by Depthline.</p>
+        <p>{messages.footerPrivacy}</p>
       </footer>
     </div>
   );

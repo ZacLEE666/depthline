@@ -31,6 +31,7 @@ Most agent tools optimize agent throughput. Depthline optimizes the scarce resou
 - Keeps active work silent unless Codex is waiting on a human.
 - Generates a local context capsule with the goal, latest result, and next human move.
 - Provides a 50-minute depth block, snooze, handled state, and a link back to the Codex workspace.
+- Supports Chinese and English, follows the browser language by default, and remembers the local choice.
 - Persists attention metadata only. Raw prompts and responses stay in process memory.
 
 ## Quick start
