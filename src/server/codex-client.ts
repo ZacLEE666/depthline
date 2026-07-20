@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
 import readline from "node:readline";
+import { resolveCodexBinary } from "./codex-binary.js";
 import type {
   CodexThread,
   CodexThreadListResponse,
@@ -30,7 +31,7 @@ export class CodexAppServerClient extends EventEmitter {
   async start(): Promise<void> {
     if (this.started) return;
     this.close();
-    const binary = process.env.DEPTHLINE_CODEX_BIN || "codex";
+    const binary = await resolveCodexBinary();
     this.child = spawn(binary, ["app-server", "--listen", "stdio://"], {
       stdio: ["pipe", "pipe", "pipe"],
       env: process.env,
