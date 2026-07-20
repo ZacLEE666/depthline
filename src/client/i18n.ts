@@ -6,6 +6,9 @@ export interface Copy {
   documentTitle: string;
   documentDescription: string;
   languageLabel: string;
+  navigationLabel: string;
+  navigationWork: string;
+  navigationStats: string;
   stateLabels: Record<AttentionState, string>;
   nextActions: Record<AttentionState, string>;
   justNow: string;
@@ -56,6 +59,33 @@ export interface Copy {
   noReview: string;
   footerVision: string;
   footerPrivacy: string;
+  workConsole: string;
+  workConsoleTitle: string;
+  workConsoleSupport: string;
+  compactFocusTitle: (minutes: number) => string;
+  compactStartFocus: string;
+  statsRealtime: string;
+  statsTitle: string;
+  statsSupport: string;
+  statsMetricsAria: string;
+  statsProtectionRate: string;
+  statsProtectionHelp: (count: number) => string;
+  statsParallelLoad: string;
+  statsParallelHelp: string;
+  statsNeedsYou: string;
+  statsNeedsHelp: string;
+  statsReviewDebt: string;
+  statsReviewHelp: string;
+  statsStructure: string;
+  statsStructureTitle: string;
+  statsItems: (count: number) => string;
+  statsProjects: string;
+  statsProjectsTitle: string;
+  statsProject: string;
+  statsRunning: string;
+  statsBlocking: string;
+  statsAwaitingReview: string;
+  statsTotal: string;
 }
 
 export const copy: Record<Locale, Copy> = {
@@ -63,6 +93,9 @@ export const copy: Record<Locale, Copy> = {
     documentTitle: "Depthline — Human depth, protected",
     documentDescription: "Depthline protects human depth while AI agents work in parallel.",
     languageLabel: "Interface language",
+    navigationLabel: "Primary navigation",
+    navigationWork: "Work",
+    navigationStats: "Attention stats",
     stateLabels: {
       needs_input: "Needs your judgment",
       needs_approval: "Approval requested",
@@ -127,13 +160,43 @@ export const copy: Record<Locale, Copy> = {
     reviewHeading: "Return when your current thought is complete",
     readyCount: (count) => `${count} ready`,
     noReview: "No completed work is waiting for review.",
-    footerVision: "Protect human depth in the age of parallel intelligence.",
+    footerVision: "Local attention control for Codex work.",
     footerPrivacy: "Raw Codex content stays in memory and is never persisted by Depthline.",
+    workConsole: "Work console",
+    workConsoleTitle: "Manage parallel work",
+    workConsoleSupport: "See what is running, what is blocked, and what is ready for review.",
+    compactFocusTitle: (minutes) => `Focus protected · ${minutes}m left`,
+    compactStartFocus: "Start focus",
+    statsRealtime: "Live snapshot",
+    statsTitle: "Attention statistics",
+    statsSupport: "Measure how parallel work is buffered before it reaches your attention.",
+    statsMetricsAria: "Attention metrics",
+    statsProtectionRate: "Attention protection rate",
+    statsProtectionHelp: (count) => `${count} non-blocking items stayed out of your immediate inbox.`,
+    statsParallelLoad: "Parallel load",
+    statsParallelHelp: "Running agents plus work currently blocked on you.",
+    statsNeedsYou: "Needs you now",
+    statsNeedsHelp: "Only these items should interrupt the current thought.",
+    statsReviewDebt: "Review debt",
+    statsReviewHelp: "Completed results waiting for batched acceptance.",
+    statsStructure: "Live state structure",
+    statsStructureTitle: "Where the work is now",
+    statsItems: (count) => `${count} items`,
+    statsProjects: "Project distribution",
+    statsProjectsTitle: "Attention load by workspace",
+    statsProject: "Project",
+    statsRunning: "Running",
+    statsBlocking: "Blocking",
+    statsAwaitingReview: "Review",
+    statsTotal: "Total",
   },
   "zh-CN": {
     documentTitle: "Depthline — 让深度思考不被打断",
     documentDescription: "当 AI Agent 并行工作时，Depthline 帮助人类守住思考深度。",
     languageLabel: "界面语言",
+    navigationLabel: "主导航",
+    navigationWork: "事项",
+    navigationStats: "注意力统计",
     stateLabels: {
       needs_input: "需要你的判断",
       needs_approval: "等待你的审批",
@@ -197,8 +260,35 @@ export const copy: Record<Locale, Copy> = {
     reviewHeading: "完成当前思考后再回来验收",
     readyCount: (count) => `${count} 项待验收`,
     noReview: "当前没有已完成工作等待验收。",
-    footerVision: "在并行智能时代，保护人类思考的深度。",
+    footerVision: "Codex 事项的本地注意力控制台。",
     footerPrivacy: "Codex 原始内容只存在于内存中，Depthline 永不持久化保存。",
+    workConsole: "事项控制台",
+    workConsoleTitle: "管理并行事项",
+    workConsoleSupport: "直接查看谁在运行、哪里阻塞、哪些结果等待验收。",
+    compactFocusTitle: (minutes) => `专注保护中 · 剩余 ${minutes} 分钟`,
+    compactStartFocus: "开始专注",
+    statsRealtime: "实时快照",
+    statsTitle: "注意力统计",
+    statsSupport: "衡量并行事项在进入你的注意力之前，被系统缓冲和批处理的情况。",
+    statsMetricsAria: "注意力指标",
+    statsProtectionRate: "注意力保护率",
+    statsProtectionHelp: (count) => `${count} 项非阻塞工作没有进入即时收件箱。`,
+    statsParallelLoad: "当前并行负载",
+    statsParallelHelp: "正在运行的 Agent，加上等待你处理的事项。",
+    statsNeedsYou: "需要你处理",
+    statsNeedsHelp: "只有这些事项应该打断当前思路。",
+    statsReviewDebt: "验收债务",
+    statsReviewHelp: "已经完成、等待集中验收的结果。",
+    statsStructure: "实时状态结构",
+    statsStructureTitle: "事项现在在哪里",
+    statsItems: (count) => `${count} 项`,
+    statsProjects: "项目分布",
+    statsProjectsTitle: "各工作区的注意力负载",
+    statsProject: "项目",
+    statsRunning: "运行中",
+    statsBlocking: "阻塞",
+    statsAwaitingReview: "待验收",
+    statsTotal: "总计",
   },
 };
 

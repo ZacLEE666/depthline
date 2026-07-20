@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowUpRight,
-  BellOff,
+  Activity,
+  BarChart3,
   Check,
   CircleAlert,
   Clock3,
   Coffee,
   Focus,
   LoaderCircle,
-  MoonStar,
+  LayoutList,
   Pause,
   Play,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   TimerReset,
 } from "lucide-react";
 import { api } from "./api";
@@ -26,6 +26,7 @@ import {
   type Copy,
   type Locale,
 } from "./i18n";
+import { buildAttentionStats } from "./statistics";
 
 function focusMinutes(snapshot: DepthlineSnapshot): number {
   if (!snapshot.focus.until) return 0;
@@ -131,6 +132,94 @@ function LoadingScreen({ messages }: { messages: Copy }) {
   );
 }
 
+function StatisticsView({ snapshot, locale, messages }: { snapshot: DepthlineSnapshot; locale: Locale; messages: Copy }) {
+  const stats = buildAttentionStats(snapshot);
+  const blocking = stats.stateCounts.needs_input + stats.stateCounts.needs_approval + stats.stateCounts.error;
+  const distribution = [
+    { key: "blocking", label: messages.statsNeedsYou, value: blocking },
+    { key: "working", label: messages.quietlyWorking, value: stats.stateCounts.working },
+    { key: "review", label: messages.batchReview, value: stats.stateCounts.ready_review },
+    { key: "parked", label: messages.parked, value: stats.stateCounts.parked },
+  ];
+
+  return (
+    <div className="stats-page">
+      <header className="page-heading">
+        <div>
+          <p className="eyebrow eyebrow--ink"><Activity size={15} /> {messages.statsRealtime}</p>
+          <h1>{messages.statsTitle}</h1>
+          <p>{messages.statsSupport}</p>
+        </div>
+        <span>{formatRelativeTime(snapshot.generatedAt, locale)}</span>
+      </header>
+
+      <section className="metric-grid" aria-label={messages.statsMetricsAria}>
+        <article className="metric-card metric-card--primary">
+          <span>{messages.statsProtectionRate}</span>
+          <strong>{stats.attentionProtectionRate === null ? "—" : `${stats.attentionProtectionRate}%`}</strong>
+          <p>{messages.statsProtectionHelp(stats.protectedItems)}</p>
+        </article>
+        <article className="metric-card">
+          <span>{messages.statsParallelLoad}</span>
+          <strong>{stats.parallelLoad}</strong>
+          <p>{messages.statsParallelHelp}</p>
+        </article>
+        <article className="metric-card metric-card--alert">
+          <span>{messages.statsNeedsYou}</span>
+          <strong>{blocking}</strong>
+          <p>{messages.statsNeedsHelp}</p>
+        </article>
+        <article className="metric-card">
+          <span>{messages.statsReviewDebt}</span>
+          <strong>{stats.stateCounts.ready_review}</strong>
+          <p>{messages.statsReviewHelp}</p>
+        </article>
+      </section>
+
+      <section className="stats-panel">
+        <div className="stats-panel-heading">
+          <div><span>{messages.statsStructure}</span><h2>{messages.statsStructureTitle}</h2></div>
+          <b>{messages.statsItems(stats.totalVisible)}</b>
+        </div>
+        <div className="distribution-track" aria-label={messages.statsStructure}>
+          {distribution.map((entry) => entry.value > 0 && (
+            <span
+              key={entry.key}
+              className={`distribution-segment distribution-segment--${entry.key}`}
+              style={{ width: `${(entry.value / Math.max(1, stats.totalVisible)) * 100}%` }}
+              title={`${entry.label}: ${entry.value}`}
+            />
+          ))}
+        </div>
+        <div className="distribution-legend">
+          {distribution.map((entry) => (
+            <div key={entry.key}><i className={`legend-dot legend-dot--${entry.key}`} /><span>{entry.label}</span><b>{entry.value}</b></div>
+          ))}
+        </div>
+      </section>
+
+      <section className="stats-panel">
+        <div className="stats-panel-heading">
+          <div><span>{messages.statsProjects}</span><h2>{messages.statsProjectsTitle}</h2></div>
+        </div>
+        <div className="project-table-wrap">
+          <table className="project-table">
+            <thead><tr><th>{messages.statsProject}</th><th>{messages.statsRunning}</th><th>{messages.statsBlocking}</th><th>{messages.statsAwaitingReview}</th><th>{messages.statsTotal}</th></tr></thead>
+            <tbody>
+              {stats.projects.map((project) => (
+                <tr key={project.project}>
+                  <td><strong>{project.project}</strong><span>{formatRelativeTime(project.latestUpdate, locale)}</span></td>
+                  <td>{project.working}</td><td>{project.needsYou}</td><td>{project.readyForReview}</td><td>{project.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function App() {
   const [locale, setLocale] = useState<Locale>(() =>
     resolveLocale(window.localStorage.getItem("depthline.locale"), window.navigator.language),
@@ -140,6 +229,7 @@ export function App() {
   const [feedback, setFeedback] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [openingItemId, setOpeningItemId] = useState<string>();
+  const [view, setView] = useState<"work" | "stats">("work");
   const messages = copy[locale];
 
   useEffect(() => {
@@ -232,7 +322,12 @@ export function App() {
     <div className="app-shell">
       <header className="topbar">
         <Logo />
-        <div className="topbar-meta">
+        <div className="topbar-actions">
+          <nav className="view-switch" aria-label={messages.navigationLabel}>
+            <button aria-pressed={view === "work"} onClick={() => setView("work")}><LayoutList size={14} /> {messages.navigationWork}</button>
+            <button aria-pressed={view === "stats"} onClick={() => setView("stats")}><BarChart3 size={14} /> {messages.navigationStats}</button>
+          </nav>
+          <div className="topbar-meta">
           <span className={`connection-dot connection-dot--${snapshot.connection}`} />
           <span>{snapshot.mode === "codex" ? messages.localCodex : messages.sampleWorkspace}</span>
           <span className="privacy-label"><ShieldCheck size={14} /> {messages.localOnly}</span>
@@ -252,6 +347,7 @@ export function App() {
               EN
             </button>
           </div>
+          </div>
         </div>
       </header>
 
@@ -269,50 +365,25 @@ export function App() {
       )}
 
       <main>
-        <section className={`focus-hero ${snapshot.focus.active ? "focus-hero--active" : ""}`}>
-          <div className="focus-copy">
-            <p className="eyebrow">
-              {snapshot.focus.active ? <MoonStar size={16} /> : <Sparkles size={16} />}
-              {snapshot.focus.active ? messages.depthProtected : messages.attentionControlPlane}
-            </p>
-            <h1>
-              {snapshot.focus.active
-                ? messages.focusTitle(remaining)
-                : messages.idleTitle}
-            </h1>
-            <p className="hero-support">
-              {snapshot.focus.active
-                ? messages.focusSupport(snapshot.focus.suppressedCount)
-                : messages.idleSupport}
-            </p>
-            <div className="hero-actions">
-              {snapshot.focus.active ? (
-                <button className="button button--light" disabled={busy} onClick={() => void runFocus("stop")}>
-                  <TimerReset size={17} /> {messages.endFocus}
-                </button>
-              ) : (
-                <>
-                  <button
-                    className="button button--light"
-                    disabled={busy}
-                    onClick={() => void runFocus("start", primaryThread?.id)}
-                  >
-                    <Play size={17} /> {messages.startFocus}
-                  </button>
-                  <span className="hero-hint"><BellOff size={15} /> {messages.batchNonBlocking}</span>
-                </>
-              )}
-            </div>
+        {view === "stats" ? <StatisticsView snapshot={snapshot} locale={locale} messages={messages} /> : <>
+        <section className={`control-strip ${snapshot.focus.active ? "control-strip--active" : ""}`}>
+          <div className="control-copy">
+            <p className="eyebrow">{snapshot.focus.active ? messages.depthProtected : messages.workConsole}</p>
+            <h1>{snapshot.focus.active ? messages.compactFocusTitle(remaining) : messages.workConsoleTitle}</h1>
+            <p>{snapshot.focus.active ? messages.focusSupport(snapshot.focus.suppressedCount) : messages.workConsoleSupport}</p>
           </div>
-          <div className="bandwidth-card" aria-label={messages.bandwidthAria}>
-            <span className="bandwidth-label">{messages.humanBandwidth}</span>
-            <strong>{snapshot.summary.needsYou}</strong>
-            <span>{messages.decisionsNeedYou(snapshot.summary.needsYou)}</span>
-            <div className="bandwidth-breakdown">
+          <div className="control-actions">
+            <div className="summary-row">
+              <div><span>{messages.statsNeedsYou}</span><b>{snapshot.summary.needsYou}</b></div>
               <div><span>{messages.quietlyWorking}</span><b>{snapshot.summary.workingQuietly}</b></div>
               <div><span>{messages.batchReview}</span><b>{snapshot.summary.readyForReview}</b></div>
               <div><span>{messages.parked}</span><b>{snapshot.summary.parked}</b></div>
             </div>
+            {snapshot.focus.active ? (
+              <button className="button button--ghost" disabled={busy} onClick={() => void runFocus("stop")}><TimerReset size={15} /> {messages.endFocus}</button>
+            ) : (
+              <button className="button button--primary" disabled={busy} onClick={() => void runFocus("start", primaryThread?.id)}><Play size={15} /> {messages.compactStartFocus}</button>
+            )}
           </div>
         </section>
 
@@ -372,6 +443,7 @@ export function App() {
             <EmptyLane>{messages.noReview}</EmptyLane>
           )}
         </section>
+        </>}
       </main>
 
       <footer>
