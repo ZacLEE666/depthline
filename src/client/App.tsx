@@ -276,7 +276,10 @@ export function App() {
         setSnapshot(next);
         setError(undefined);
       },
-      () => setError(messages.refreshFailed),
+      () => {
+        setSnapshot((current) => current ? { ...current, connection: "degraded" } : current);
+        setError(messages.refreshFailed);
+      },
     );
   }, [load]);
 

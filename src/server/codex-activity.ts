@@ -5,11 +5,24 @@ import type { CodexThread } from "./codex-types.js";
 
 const MAX_TAIL_BYTES = 512 * 1024;
 
-type LifecycleActivity = "working" | "complete" | "interrupted" | undefined;
+type LifecycleActivity =
+  | "working"
+  | "waiting_approval"
+  | "waiting_input"
+  | "complete"
+  | "interrupted"
+  | undefined;
 
 interface RolloutRecord {
   type?: string;
-  payload?: { type?: string };
+  payload?: {
+    type?: string;
+    name?: string;
+    id?: string;
+    call_id?: string;
+    arguments?: string;
+    input?: string;
+  };
 }
 
 interface CachedActivity {
@@ -20,20 +33,61 @@ interface CachedActivity {
 
 export function lifecycleActivityFromText(text: string): LifecycleActivity {
   const lines = text.split("\n");
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
+  let lifecycle: LifecycleActivity;
+  const pendingCalls = new Map<string, { name: string; payloadText: string }>();
+
+  for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index].trim();
     if (!line) continue;
     try {
       const record = JSON.parse(line) as RolloutRecord;
-      if (record.type !== "event_msg") continue;
-      if (record.payload?.type === "task_started") return "working";
-      if (record.payload?.type === "task_complete") return "complete";
-      if (record.payload?.type === "turn_aborted") return "interrupted";
+      const payload = record.payload;
+      if (record.type === "event_msg") {
+        if (payload?.type === "task_started") {
+          lifecycle = "working";
+          pendingCalls.clear();
+        }
+        if (payload?.type === "task_complete") {
+          lifecycle = "complete";
+          pendingCalls.clear();
+        }
+        if (payload?.type === "turn_aborted") {
+          lifecycle = "interrupted";
+          pendingCalls.clear();
+        }
+        continue;
+      }
+      if (record.type !== "response_item" || !payload) continue;
+
+      const callId = payload.call_id ?? payload.id;
+      if (!callId) continue;
+      if (payload.type === "function_call" || payload.type === "custom_tool_call") {
+        pendingCalls.set(callId, {
+          name: payload.name ?? "",
+          payloadText: `${payload.arguments ?? ""}\n${payload.input ?? ""}`,
+        });
+      }
+      if (payload.type === "function_call_output" || payload.type === "custom_tool_call_output") {
+        pendingCalls.delete(callId);
+      }
     } catch {
       // A tail read can begin in the middle of a JSONL record. Ignore that fragment.
     }
   }
-  return undefined;
+
+  if (lifecycle !== "working") return lifecycle;
+
+  for (const call of [...pendingCalls.values()].reverse()) {
+    if (call.name === "request_user_input") return "waiting_input";
+    if (call.name === "apply_patch") return "waiting_approval";
+    if (
+      (call.name === "exec" || call.name === "exec_command") &&
+      call.payloadText.includes("require_escalated")
+    ) {
+      return "waiting_approval";
+    }
+  }
+  return lifecycle;
 }
 
 export class CodexActivityMonitor {
@@ -53,7 +107,7 @@ export class CodexActivityMonitor {
     const rolloutPath = await this.resolveRolloutPath(thread);
     if (!rolloutPath) return thread;
     const activity = await this.readActivity(rolloutPath);
-    if (activity !== "working") return thread;
+    if (!activity || activity === "complete" || activity === "interrupted") return thread;
 
     const turns = thread.turns.length
       ? thread.turns.map((turn, index) =>
@@ -61,9 +115,17 @@ export class CodexActivityMonitor {
         )
       : thread.turns;
 
+    const inferredFlag = activity === "waiting_approval"
+      ? "waitingOnApproval"
+      : activity === "waiting_input"
+        ? "waitingOnUserInput"
+        : undefined;
+    const activeFlags = [...(thread.status.activeFlags ?? [])];
+    if (inferredFlag && !activeFlags.includes(inferredFlag)) activeFlags.push(inferredFlag);
+
     return {
       ...thread,
-      status: { type: "active", activeFlags: thread.status.activeFlags ?? [] },
+      status: { type: "active", activeFlags },
       turns,
     };
   }
