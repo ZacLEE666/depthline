@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSnapshot } from "./attention-engine.js";
 import { CodexAppServerClient } from "./codex-client.js";
-import { openCodexWorkspace } from "./codex-launcher.js";
+import { openCodexThread } from "./codex-launcher.js";
 import type { CodexThread } from "./codex-types.js";
 import { demoThreads } from "./demo.js";
 import { LocalStateStore } from "./store.js";
@@ -168,8 +168,8 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
         return true;
       }
       try {
-        await openCodexWorkspace(thread.cwd);
-        json(response, 200, { ok: true, opened: "workspace" });
+        await openCodexThread(thread.id);
+        json(response, 200, { ok: true, opened: "thread" });
       } catch (error) {
         json(response, 502, {
           error: `Could not open Codex. ${error instanceof Error ? error.message : String(error)}`,

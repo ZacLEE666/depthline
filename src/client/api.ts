@@ -32,7 +32,7 @@ export const api = {
       body: "{}",
     }),
   open: (threadId: string) =>
-    request<{ ok: true; opened: "workspace" }>(`/api/items/${encodeURIComponent(threadId)}/open`, {
+    request<{ ok: true; opened: "thread" }>(`/api/items/${encodeURIComponent(threadId)}/open`, {
       method: "POST",
       body: "{}",
     }),

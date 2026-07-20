@@ -1,25 +1,32 @@
 import { spawn } from "node:child_process";
-import { resolveCodexBinary } from "./codex-binary.js";
 
 const LAUNCH_TIMEOUT_MS = 10_000;
-const SPAWN_CONFIRMATION_MS = 1_200;
 
-export async function openCodexWorkspace(cwd: string): Promise<void> {
-  const binary = await resolveCodexBinary();
+export function codexThreadUrl(threadId: string): string {
+  return `codex://threads/${encodeURIComponent(threadId)}`;
+}
+
+function launcherFor(url: string): { command: string; args: string[] } {
+  if (process.platform === "darwin") return { command: "/usr/bin/open", args: [url] };
+  if (process.platform === "win32") {
+    return { command: "cmd", args: ["/c", "start", "", url] };
+  }
+  return { command: "xdg-open", args: [url] };
+}
+
+export async function openCodexThread(threadId: string): Promise<void> {
+  const { command, args } = launcherFor(codexThreadUrl(threadId));
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(binary, ["app", cwd], {
-      detached: true,
+    const child = spawn(command, args, {
       stdio: "ignore",
       env: process.env,
     });
     let settled = false;
-    let confirmation: NodeJS.Timeout | undefined;
     const finish = (error?: Error) => {
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
-      if (confirmation) clearTimeout(confirmation);
       if (error) reject(error);
       else resolve();
     };
@@ -29,15 +36,9 @@ export async function openCodexWorkspace(cwd: string): Promise<void> {
     }, LAUNCH_TIMEOUT_MS);
 
     child.once("error", (error) => finish(error));
-    child.once("spawn", () => {
-      confirmation = setTimeout(() => {
-        child.unref();
-        finish();
-      }, SPAWN_CONFIRMATION_MS);
-    });
     child.once("exit", (code, signal) => {
       if (code === 0) finish();
-      else finish(new Error(`Codex launcher exited (${code ?? signal ?? "unknown"}).`));
+      else finish(new Error(`Codex deep-link launcher exited (${code ?? signal ?? "unknown"}).`));
     });
   });
 }
