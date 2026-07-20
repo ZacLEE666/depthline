@@ -8,6 +8,7 @@ import {
   Clock3,
   Coffee,
   Focus,
+  FolderKanban,
   LoaderCircle,
   LayoutList,
   Pause,
@@ -67,13 +68,12 @@ interface ItemCardProps {
 function ItemCard({ item, variant = "decision", busy, opening, locale, messages, onAction }: ItemCardProps) {
   return (
     <article className={`item-card item-card--${variant}`}>
-      <div className="item-topline">
-        <span className={`state-pill state-pill--${item.state}`}>
-          <StateIcon state={item.state} />
-          {messages.stateLabels[item.state]}
-        </span>
+      <div className="item-project-row">
+        <div className="item-project" title={item.project}>
+          <FolderKanban size={14} aria-hidden="true" />
+          <span>{item.project}</span>
+        </div>
         <div className="item-top-actions">
-          <span className="item-time">{formatRelativeTime(item.updatedAt, locale)}</span>
           <button
             type="button"
             className={`follow-toggle ${item.isFollowed ? "follow-toggle--active" : ""}`}
@@ -87,28 +87,32 @@ function ItemCard({ item, variant = "decision", busy, opening, locale, messages,
           </button>
         </div>
       </div>
-      <div>
-        <p className="item-project">{item.project}</p>
+      <div className="item-meta-row">
+        <span className={`state-pill state-pill--${item.state}`}>
+          <StateIcon state={item.state} />
+          {messages.stateLabels[item.state]}
+        </span>
+        <span className="item-time">{formatRelativeTime(item.updatedAt, locale)}</span>
+      </div>
+      <div className="item-title-block">
         <h3 title={item.title}>{item.title}</h3>
       </div>
-      {variant !== "quiet" && (
-        <div className="capsule">
-          <div>
-            <span>{messages.latest}</span>
-            <p>{item.capsule.latest}</p>
-          </div>
-          <div>
+      <div className="capsule">
+        <div className="latest-progress">
+          <span>{messages.latest}</span>
+          <p>{item.capsule.latest}</p>
+        </div>
+        {(variant === "decision" || variant === "review") && (
+          <div className="human-move">
             <span>{messages.nextHumanMove}</span>
             <p>{messages.nextActions[item.state]}</p>
           </div>
-        </div>
-      )}
-      <div className="item-actions">
-        {variant !== "quiet" && (
-          <button className="button button--primary" disabled={busy} onClick={() => onAction("open", item)}>
-            {opening ? messages.openingCodex : messages.openInCodex} <ArrowUpRight size={15} />
-          </button>
         )}
+      </div>
+      <div className="item-actions">
+        <button className="button button--primary" disabled={busy} onClick={() => onAction("open", item)}>
+          {opening ? messages.openingCodex : messages.openInCodex} <ArrowUpRight size={15} />
+        </button>
         {variant === "quiet" && (
           <button className="button button--ghost" disabled={busy} onClick={() => onAction("focus", item)}>
             <Focus size={15} /> {messages.protectThread}
@@ -453,7 +457,7 @@ export function App() {
           {working.length ? (
             <div className="quiet-grid">
               {working.map((item) => (
-                <ItemCard key={item.id} item={item} variant="quiet" busy={busy} opening={false} locale={locale} messages={messages} onAction={runAction} />
+                <ItemCard key={item.id} item={item} variant="quiet" busy={busy} opening={openingItemId === item.id} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (
