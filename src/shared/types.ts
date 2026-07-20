@@ -45,6 +45,22 @@ export interface SnapshotSummary {
   parked: number;
 }
 
+export interface ProjectConversationActivity {
+  project: string;
+  counts: number[];
+  today: number;
+  total: number;
+}
+
+export interface ConversationActivity {
+  today: string;
+  todayTotal: number;
+  sourceThreadCount: number;
+  days: string[];
+  maxDailyCount: number;
+  projects: ProjectConversationActivity[];
+}
+
 export interface DepthlineSnapshot {
   mode: "codex" | "demo";
   connection: "connected" | "connecting" | "degraded";
@@ -52,6 +68,7 @@ export interface DepthlineSnapshot {
   items: AttentionItem[];
   focus: FocusSession;
   summary: SnapshotSummary;
+  conversationActivity: ConversationActivity;
   privacy: {
     rawContentPersisted: false;
     bindAddress: "127.0.0.1";

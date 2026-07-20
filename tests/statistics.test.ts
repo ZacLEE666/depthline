@@ -28,6 +28,7 @@ function snapshot(items: AttentionItem[]): DepthlineSnapshot {
     items,
     focus: { active: false, suppressedCount: 0 },
     summary: { needsYou: 1, workingQuietly: 1, readyForReview: 1, parked: 1 },
+    conversationActivity: { today: "2026-07-20", todayTotal: 0, sourceThreadCount: 0, days: [], maxDailyCount: 0, projects: [] },
     privacy: { rawContentPersisted: false, bindAddress: "127.0.0.1" },
   };
 }

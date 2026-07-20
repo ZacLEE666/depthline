@@ -92,6 +92,18 @@ export interface Copy {
   statsBlocking: string;
   statsAwaitingReview: string;
   statsTotal: string;
+  statsConversationSignal: string;
+  statsConversationTitle: string;
+  statsConversationSupport: (count: number) => string;
+  statsLastDays: (count: number) => string;
+  statsTodayTurns: string;
+  statsRounds: (count: number) => string;
+  statsNoTurnsToday: string;
+  statsNoConversationHistory: string;
+  statsCellLabel: (project: string, day: string, count: number) => string;
+  statsHeatLegend: string;
+  statsLess: string;
+  statsMore: string;
 }
 
 export const copy: Record<Locale, Copy> = {
@@ -201,6 +213,18 @@ export const copy: Record<Locale, Copy> = {
     statsBlocking: "Blocking",
     statsAwaitingReview: "Review",
     statsTotal: "Total",
+    statsConversationSignal: "Conversation frequency",
+    statsConversationTitle: "Where conversations happened",
+    statsConversationSupport: (count) => `One round is one Codex turn, based on ${count} currently loaded unarchived conversations. Frequency is a proxy for effort, not time or quality.`,
+    statsLastDays: (count) => `Last ${count} days`,
+    statsTodayTurns: "Today's conversation rounds",
+    statsRounds: (count) => `${count} ${count === 1 ? "round" : "rounds"}`,
+    statsNoTurnsToday: "No Codex turns recorded today.",
+    statsNoConversationHistory: "No conversation history is available in this period.",
+    statsCellLabel: (project, day, count) => `${project}, ${day}: ${count} conversation rounds`,
+    statsHeatLegend: "Conversation frequency color scale",
+    statsLess: "Less",
+    statsMore: "More",
   },
   "zh-CN": {
     documentTitle: "Depthline — 让深度思考不被打断",
@@ -307,6 +331,18 @@ export const copy: Record<Locale, Copy> = {
     statsBlocking: "阻塞",
     statsAwaitingReview: "待验收",
     statsTotal: "总计",
+    statsConversationSignal: "对话频次",
+    statsConversationTitle: "对话发生在哪些项目",
+    statsConversationSupport: (count) => `一轮按一个 Codex turn 计算，数据来自当前加载的 ${count} 条未归档对话。频次只作为精力投入的代理信号，不代表实际工时或工作质量。`,
+    statsLastDays: (count) => `最近 ${count} 天`,
+    statsTodayTurns: "今日对话轮次",
+    statsRounds: (count) => `${count} 轮对话`,
+    statsNoTurnsToday: "今天还没有记录到 Codex 对话。",
+    statsNoConversationHistory: "这个时间范围内还没有可统计的对话记录。",
+    statsCellLabel: (project, day, count) => `${project}，${day}：${count} 轮对话`,
+    statsHeatLegend: "对话频次颜色图例",
+    statsLess: "少",
+    statsMore: "多",
   },
 };
 

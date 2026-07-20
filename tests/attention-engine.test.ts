@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildSnapshot,
+  buildConversationActivity,
   deriveAttentionItem,
   displayTitle,
   observeThreadTransitions,
@@ -36,6 +37,35 @@ function state(): PersistedState {
 }
 
 describe("attention engine", () => {
+  it("counts Codex turns by local day and project for the activity heatmap", () => {
+    const localNow = new Date(2026, 6, 21, 12, 0, 0);
+    const today = Math.floor(new Date(2026, 6, 21, 9, 0, 0).getTime() / 1000);
+    const yesterday = Math.floor(new Date(2026, 6, 20, 18, 0, 0).getTime() / 1000);
+    const activity = buildConversationActivity([
+      thread({
+        id: "alpha-1",
+        cwd: "/Projects/alpha",
+        turns: [
+          { id: "a-1", status: "completed", startedAt: today, items: [] },
+          { id: "a-2", status: "completed", startedAt: today, items: [] },
+          { id: "a-3", status: "completed", startedAt: yesterday, items: [] },
+        ],
+      }),
+      thread({
+        id: "beta-1",
+        cwd: "/Projects/beta",
+        turns: [{ id: "b-1", status: "inProgress", startedAt: today, items: [] }],
+      }),
+    ], localNow, 3);
+
+    expect(activity.todayTotal).toBe(3);
+    expect(activity.sourceThreadCount).toBe(2);
+    expect(activity.maxDailyCount).toBe(2);
+    expect(activity.projects[0]).toMatchObject({ project: "alpha", today: 2, total: 3 });
+    expect(activity.projects[0].counts).toEqual([0, 1, 2]);
+    expect(activity.projects[1]).toMatchObject({ project: "beta", today: 1, total: 1 });
+  });
+
   it("turns an AI-generated summary into a compact task title", () => {
     expect(displayTitle(
       "AI总结 双方讨论候选人学历破格录用可能性，重点分析其广州属地化工作与异地团队的协同难题。涉及产品经理岗位适配性评估。",

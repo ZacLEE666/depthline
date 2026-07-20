@@ -17,6 +17,7 @@ export function demoThreads(): CodexThread[] {
         {
           id: "turn-input",
           status: "inProgress",
+          startedAt: now - 1_200,
           items: [
             {
               id: "message-input",
@@ -36,7 +37,7 @@ export function demoThreads(): CodexThread[] {
       status: { type: "active", activeFlags: ["waitingOnApproval"] },
       createdAt: now - 7_200,
       updatedAt: now - 420,
-      turns: [{ id: "turn-approval", status: "inProgress", items: [] }],
+      turns: [{ id: "turn-approval", status: "inProgress", startedAt: now - 3_600, items: [] }],
     },
     {
       id: "demo-working",
@@ -47,7 +48,7 @@ export function demoThreads(): CodexThread[] {
       status: { type: "active", activeFlags: [] },
       createdAt: now - 3_600,
       updatedAt: now - 60,
-      turns: [{ id: "turn-working", status: "inProgress", items: [] }],
+      turns: [{ id: "turn-working", status: "inProgress", startedAt: now - 900, items: [] }],
     },
     {
       id: "demo-review",
@@ -62,6 +63,8 @@ export function demoThreads(): CodexThread[] {
         {
           id: "turn-review",
           status: "completed",
+          startedAt: now - 7_200,
+          completedAt: now - 1_200,
           items: [
             {
               id: "message-review",

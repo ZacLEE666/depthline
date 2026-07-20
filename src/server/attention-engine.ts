@@ -2,6 +2,7 @@ import path from "node:path";
 import type {
   AttentionItem,
   AttentionState,
+  ConversationActivity,
   DepthlineSnapshot,
   PersistedState,
   Urgency,
@@ -137,6 +138,61 @@ function nextActionFor(state: AttentionState): string {
   }
 }
 
+function localDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function buildConversationActivity(
+  threads: CodexThread[],
+  now = new Date(),
+  dayCount = 14,
+): ConversationActivity {
+  const days = Array.from({ length: dayCount }, (_, index) => {
+    const date = new Date(now);
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() - (dayCount - index - 1));
+    return localDateKey(date);
+  });
+  const dayIndexes = new Map(days.map((day, index) => [day, index]));
+  const projects = new Map<string, number[]>();
+
+  for (const thread of threads) {
+    const project = path.basename(thread.cwd) || thread.cwd;
+    thread.turns.forEach((turn, index) => {
+      const timestamp = turn.startedAt ?? turn.completedAt ??
+        (index === thread.turns.length - 1 ? thread.updatedAt : undefined);
+      if (timestamp === undefined || timestamp === null) return;
+      const dayIndex = dayIndexes.get(localDateKey(new Date(timestamp * 1000)));
+      if (dayIndex === undefined) return;
+      const counts = projects.get(project) ?? Array(dayCount).fill(0) as number[];
+      counts[dayIndex] += 1;
+      projects.set(project, counts);
+    });
+  }
+
+  const projectActivity = [...projects.entries()]
+    .map(([project, counts]) => ({
+      project,
+      counts,
+      today: counts.at(-1) ?? 0,
+      total: counts.reduce((sum, count) => sum + count, 0),
+    }))
+    .sort((a, b) => b.today - a.today || b.total - a.total || a.project.localeCompare(b.project));
+  const allCounts = projectActivity.flatMap((project) => project.counts);
+
+  return {
+    today: days.at(-1) ?? localDateKey(now),
+    todayTotal: projectActivity.reduce((sum, project) => sum + project.today, 0),
+    sourceThreadCount: threads.length,
+    days,
+    maxDailyCount: Math.max(0, ...allCounts),
+    projects: projectActivity,
+  };
+}
+
 export function deriveAttentionItem(
   thread: CodexThread,
   state: PersistedState,
@@ -223,6 +279,7 @@ export function buildSnapshot(
       readyForReview: visibleItems.filter((item) => item.state === "ready_review").length,
       parked: visibleItems.filter((item) => item.state === "parked").length,
     },
+    conversationActivity: buildConversationActivity(threads, now),
     privacy: {
       rawContentPersisted: false,
       bindAddress: "127.0.0.1",

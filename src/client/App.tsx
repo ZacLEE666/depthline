@@ -152,6 +152,7 @@ function LoadingScreen({ messages }: { messages: Copy }) {
 
 function StatisticsView({ snapshot, locale, messages }: { snapshot: DepthlineSnapshot; locale: Locale; messages: Copy }) {
   const stats = buildAttentionStats(snapshot);
+  const activity = snapshot.conversationActivity;
   const blocking = stats.stateCounts.needs_input + stats.stateCounts.needs_approval + stats.stateCounts.error;
   const distribution = [
     { key: "blocking", label: messages.statsNeedsYou, value: blocking },
@@ -192,6 +193,62 @@ function StatisticsView({ snapshot, locale, messages }: { snapshot: DepthlineSna
           <strong>{stats.stateCounts.ready_review}</strong>
           <p>{messages.statsReviewHelp}</p>
         </article>
+      </section>
+
+      <section className="stats-panel conversation-panel">
+        <div className="stats-panel-heading">
+          <div><span>{messages.statsConversationSignal}</span><h2>{messages.statsConversationTitle}</h2></div>
+          <b>{messages.statsLastDays(activity.days.length)}</b>
+        </div>
+        <p className="stats-panel-support">{messages.statsConversationSupport(activity.sourceThreadCount)}</p>
+        <div className="conversation-layout">
+          <article className="today-turns-card">
+            <span>{messages.statsTodayTurns}</span>
+            <strong>{activity.todayTotal}</strong>
+            <p>{messages.statsRounds(activity.todayTotal)}</p>
+            <div className="today-project-list">
+              {activity.projects.filter((project) => project.today > 0).slice(0, 5).map((project) => (
+                <div key={project.project}><span title={project.project}>{project.project}</span><b>{project.today}</b></div>
+              ))}
+              {!activity.todayTotal && <small>{messages.statsNoTurnsToday}</small>}
+            </div>
+          </article>
+          <div className="heatmap-wrap">
+            {activity.projects.length ? (
+              <div className="conversation-heatmap" style={{ "--heatmap-days": activity.days.length } as React.CSSProperties}>
+                <div className="heatmap-corner">{messages.statsProject}</div>
+                {activity.days.map((day, index) => (
+                  <time key={day} dateTime={day} className={index === activity.days.length - 1 ? "is-today" : ""}>
+                    <span>{new Intl.DateTimeFormat(locale, { weekday: "narrow" }).format(new Date(`${day}T12:00:00`))}</span>
+                    <b>{day.slice(5).replace("-", "/")}</b>
+                  </time>
+                ))}
+                {activity.projects.map((project) => (
+                  <div className="heatmap-row" key={project.project}>
+                    <strong title={project.project}>{project.project}</strong>
+                    {project.counts.map((count, index) => {
+                      const level = count === 0 ? 0 : Math.max(1, Math.ceil((count / Math.max(1, activity.maxDailyCount)) * 4));
+                      const day = activity.days[index];
+                      return (
+                        <span
+                          key={day}
+                          className={`heat-cell heat-cell--${level} ${index === activity.days.length - 1 ? "is-today" : ""}`}
+                          title={messages.statsCellLabel(project.project, day, count)}
+                          aria-label={messages.statsCellLabel(project.project, day, count)}
+                        >{count || ""}</span>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            ) : <div className="heatmap-empty">{messages.statsNoConversationHistory}</div>}
+            <div className="heatmap-legend" aria-label={messages.statsHeatLegend}>
+              <span>{messages.statsLess}</span>
+              {[0, 1, 2, 3, 4].map((level) => <i key={level} className={`heat-cell heat-cell--${level}`} />)}
+              <span>{messages.statsMore}</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="stats-panel">
