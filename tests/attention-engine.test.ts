@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildSnapshot, deriveAttentionItem } from "../src/server/attention-engine.js";
+import {
+  buildSnapshot,
+  deriveAttentionItem,
+  observeThreadTransitions,
+} from "../src/server/attention-engine.js";
 import type { CodexThread } from "../src/server/codex-types.js";
 import type { PersistedState } from "../src/shared/types.js";
 
@@ -55,7 +59,9 @@ describe("attention engine", () => {
   });
 
   it("batches a recently completed turn for review", () => {
-    const item = deriveAttentionItem(thread(), state(), now);
+    const persisted = state();
+    persisted.threadPreferences["thread-1"] = { pendingReviewTurnId: "turn-1" };
+    const item = deriveAttentionItem(thread(), persisted, now);
 
     expect(item.state).toBe("ready_review");
     expect(item.urgency).toBe("batch");
@@ -69,6 +75,40 @@ describe("attention engine", () => {
     };
 
     expect(deriveAttentionItem(thread(), persisted, now).state).toBe("parked");
+  });
+
+  it("parks historical completed work on first observation", () => {
+    const persisted = state();
+    observeThreadTransitions([thread()], persisted);
+
+    expect(deriveAttentionItem(thread(), persisted, now).state).toBe("parked");
+    expect(persisted.threadPreferences["thread-1"].pendingReviewTurnId).toBeUndefined();
+  });
+
+  it("creates review work only when an observed turn actually completes", () => {
+    const persisted = state();
+    const running = thread({
+      status: { type: "idle" },
+      turns: [{ id: "turn-1", status: "inProgress", items: [] }],
+    });
+    observeThreadTransitions([running], persisted);
+
+    expect(deriveAttentionItem(running, persisted, now).state).toBe("working");
+
+    const completed = thread();
+    observeThreadTransitions([completed], persisted);
+
+    expect(persisted.threadPreferences["thread-1"].pendingReviewTurnId).toBe("turn-1");
+    expect(deriveAttentionItem(completed, persisted, now).state).toBe("ready_review");
+  });
+
+  it("recognizes an in-progress turn even when the thread status is idle", () => {
+    const running = thread({
+      status: { type: "idle" },
+      turns: [{ id: "turn-1", status: "inProgress", items: [] }],
+    });
+
+    expect(deriveAttentionItem(running, state(), now).state).toBe("working");
   });
 
   it("silences a snoozed blocking item without changing its semantic state", () => {

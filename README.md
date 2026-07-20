@@ -73,10 +73,13 @@ Then open `http://127.0.0.1:4545`.
 | Waiting on approval | Interrupt: an explicit approval is required in Codex |
 | Failed turn or system error | Interrupt: recovery is required |
 | Active without a wait signal | Silent: the agent is working |
-| Recent completed turn | Batch: review after the current focus block |
+| Observed turn changes from running to completed | Batch: review after the current focus block |
 | Old or already handled thread | Park: no attention cost |
 
-The policy is deterministic and covered by tests. Depthline does not ask another model to decide when to interrupt you.
+On first connection, existing completed threads are treated as historical and parked. Depthline persists the
+last observed turn state, so only a later completion transition enters the review batch and handled results do
+not reappear after restart. The policy is deterministic and covered by tests. Depthline does not ask another
+model to decide when to interrupt you.
 
 ## Privacy and security
 

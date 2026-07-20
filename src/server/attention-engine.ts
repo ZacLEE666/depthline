@@ -8,8 +8,6 @@ import type {
 } from "../shared/types.js";
 import type { CodexThread, CodexThreadItem } from "./codex-types.js";
 
-const REVIEW_WINDOW_MINUTES = 12 * 60;
-
 function sourceLabel(source: unknown): string {
   if (typeof source === "string") return source;
   if (source && typeof source === "object") {
@@ -38,10 +36,10 @@ function trimText(value: string | undefined, max = 180): string {
 
 function classify(
   thread: CodexThread,
-  ageMinutes: number,
-  handledAfterUpdate: boolean,
+  pendingReviewTurnId?: string,
 ): { state: AttentionState; urgency: Urgency; score: number } {
   const flags = thread.status.activeFlags ?? [];
+  const turn = thread.turns.at(-1);
 
   if (flags.includes("waitingOnUserInput")) {
     return { state: "needs_input", urgency: "blocking", score: 100 };
@@ -52,14 +50,49 @@ function classify(
   if (thread.status.type === "systemError" || lastTurnStatus(thread) === "failed") {
     return { state: "error", urgency: "blocking", score: 92 };
   }
-  if (thread.status.type === "active") {
+  if (thread.status.type === "active" || turn?.status === "inProgress") {
     return { state: "working", urgency: "quiet", score: 5 };
   }
-  if (!handledAfterUpdate && lastTurnStatus(thread) === "completed" && ageMinutes < REVIEW_WINDOW_MINUTES) {
-    const freshness = Math.max(0, 18 - Math.floor(ageMinutes / 40));
-    return { state: "ready_review", urgency: "batch", score: 54 + freshness };
+  if (turn?.status === "completed" && pendingReviewTurnId === turn.id) {
+    return { state: "ready_review", urgency: "batch", score: 54 };
   }
   return { state: "parked", urgency: "quiet", score: 0 };
+}
+
+export function observeThreadTransitions(threads: CodexThread[], state: PersistedState): boolean {
+  let changed = false;
+
+  for (const thread of threads) {
+    const turn = thread.turns.at(-1);
+    if (!turn) continue;
+
+    const existing = state.threadPreferences[thread.id] ?? {};
+    const firstObservation = existing.observedTurnId === undefined;
+    const turnChanged = existing.observedTurnId !== turn.id;
+    const statusChanged = existing.observedTurnStatus !== turn.status;
+
+    if (!turnChanged && !statusChanged) continue;
+
+    const completedAfterObservation =
+      !firstObservation &&
+      turn.status === "completed" &&
+      (turnChanged || existing.observedTurnStatus !== "completed");
+    const pendingReviewTurnId = completedAfterObservation
+      ? turn.id
+      : turnChanged || turn.status !== "completed"
+        ? undefined
+        : existing.pendingReviewTurnId;
+
+    state.threadPreferences[thread.id] = {
+      ...existing,
+      observedTurnId: turn.id,
+      observedTurnStatus: turn.status,
+      pendingReviewTurnId,
+    };
+    changed = true;
+  }
+
+  return changed;
 }
 
 function nextActionFor(state: AttentionState): string {
@@ -87,10 +120,7 @@ export function deriveAttentionItem(
   const preference = state.threadPreferences[thread.id] ?? {};
   const updatedAt = new Date(thread.updatedAt * 1000);
   const ageMinutes = Math.max(0, Math.floor((now.getTime() - updatedAt.getTime()) / 60_000));
-  const handledAfterUpdate = preference.handledAt
-    ? new Date(preference.handledAt).getTime() >= updatedAt.getTime()
-    : false;
-  const classification = classify(thread, ageMinutes, handledAfterUpdate);
+  const classification = classify(thread, preference.pendingReviewTurnId);
   const snoozed = preference.snoozedUntil
     ? new Date(preference.snoozedUntil).getTime() > now.getTime()
     : false;

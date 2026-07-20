@@ -3,7 +3,7 @@ import { stat } from "node:fs/promises";
 import http, { type IncomingMessage, type ServerResponse } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildSnapshot } from "./attention-engine.js";
+import { buildSnapshot, observeThreadTransitions } from "./attention-engine.js";
 import { CodexAppServerClient } from "./codex-client.js";
 import { openCodexThread } from "./codex-launcher.js";
 import type { CodexThread } from "./codex-types.js";
@@ -41,7 +41,11 @@ async function refresh(): Promise<void> {
     }
     try {
       await codex.start();
-      threads = await codex.listThreads();
+      const nextThreads = await codex.listThreads();
+      await updateState((state) => {
+        observeThreadTransitions(nextThreads, state);
+      });
+      threads = nextThreads;
       mode = "codex";
       connection = "connected";
       warning = undefined;
@@ -156,10 +160,17 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
       });
     } else if (action === "handled") {
       await updateState((state) => {
+        const completedTurnId = thread.turns.at(-1)?.status === "completed"
+          ? thread.turns.at(-1)?.id
+          : undefined;
         state.threadPreferences[threadId] = {
           ...state.threadPreferences[threadId],
           handledAt: new Date().toISOString(),
           snoozedUntil: undefined,
+          pendingReviewTurnId:
+            state.threadPreferences[threadId]?.pendingReviewTurnId === completedTurnId
+              ? undefined
+              : state.threadPreferences[threadId]?.pendingReviewTurnId,
         };
       });
     } else if (action === "open") {

@@ -62,6 +62,9 @@ export interface ThreadPreference {
   snoozedUntil?: string;
   handledAt?: string;
   pinned?: boolean;
+  observedTurnId?: string;
+  observedTurnStatus?: "completed" | "interrupted" | "failed" | "inProgress";
+  pendingReviewTurnId?: string;
 }
 
 export interface PersistedState {
