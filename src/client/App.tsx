@@ -56,12 +56,13 @@ interface ItemCardProps {
   item: AttentionItem;
   variant?: "decision" | "quiet" | "review";
   busy: boolean;
+  opening: boolean;
   locale: Locale;
   messages: Copy;
   onAction: (action: "focus" | "snooze" | "handled" | "open", item: AttentionItem) => void;
 }
 
-function ItemCard({ item, variant = "decision", busy, locale, messages, onAction }: ItemCardProps) {
+function ItemCard({ item, variant = "decision", busy, opening, locale, messages, onAction }: ItemCardProps) {
   return (
     <article className={`item-card item-card--${variant}`}>
       <div className="item-topline">
@@ -90,7 +91,7 @@ function ItemCard({ item, variant = "decision", busy, locale, messages, onAction
       <div className="item-actions">
         {variant !== "quiet" && (
           <button className="button button--primary" disabled={busy} onClick={() => onAction("open", item)}>
-            {messages.openInCodex} <ArrowUpRight size={15} />
+            {opening ? messages.openingCodex : messages.openInCodex} <ArrowUpRight size={15} />
           </button>
         )}
         {variant === "quiet" && (
@@ -136,7 +137,9 @@ export function App() {
   );
   const [snapshot, setSnapshot] = useState<DepthlineSnapshot>();
   const [error, setError] = useState<string>();
+  const [feedback, setFeedback] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [openingItemId, setOpeningItemId] = useState<string>();
   const messages = copy[locale];
 
   useEffect(() => {
@@ -179,21 +182,27 @@ export function App() {
     item: AttentionItem,
   ) => {
     setBusy(true);
+    setOpeningItemId(action === "open" ? item.id : undefined);
+    setFeedback(undefined);
     try {
-      const next =
-        action === "focus"
-          ? await api.startFocus(50, item.id)
-          : action === "snooze"
-            ? await api.snooze(item.id)
-            : action === "handled"
-              ? await api.handled(item.id)
-              : await api.open(item.id);
-      setSnapshot(next);
+      if (action === "open") {
+        await api.open(item.id);
+        setFeedback(messages.openedWorkspace);
+      } else {
+        const next =
+          action === "focus"
+            ? await api.startFocus(50, item.id)
+            : action === "snooze"
+              ? await api.snooze(item.id)
+              : await api.handled(item.id);
+        setSnapshot(next);
+      }
       setError(undefined);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : messages.actionFailed);
     } finally {
       setBusy(false);
+      setOpeningItemId(undefined);
     }
   };
 
@@ -247,6 +256,12 @@ export function App() {
           <span>{localizeRuntimeMessage(error || snapshot.warning || "", locale)}</span>
         </div>
       )}
+      {feedback && !snapshot.warning && !error && (
+        <div className="notice notice--success" role="status">
+          <Check size={17} />
+          <span>{feedback}</span>
+        </div>
+      )}
 
       <main>
         <section className={`focus-hero ${snapshot.focus.active ? "focus-hero--active" : ""}`}>
@@ -296,7 +311,7 @@ export function App() {
           </div>
         </section>
 
-        <section className="section-block">
+        <section className={`section-block ${decisions.length ? "" : "section-block--empty"}`}>
           <div className="section-heading">
             <div>
               <p className="eyebrow eyebrow--ink"><CircleAlert size={15} /> {messages.decisionInbox}</p>
@@ -307,7 +322,7 @@ export function App() {
           {decisions.length ? (
             <div className="decision-grid">
               {decisions.map((item) => (
-                <ItemCard key={item.id} item={item} busy={busy} locale={locale} messages={messages} onAction={runAction} />
+                <ItemCard key={item.id} item={item} busy={busy} opening={openingItemId === item.id} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (
@@ -315,7 +330,7 @@ export function App() {
           )}
         </section>
 
-        <section className="section-block section-block--quiet">
+        <section className={`section-block section-block--quiet ${working.length ? "" : "section-block--empty"}`}>
           <div className="section-heading">
             <div>
               <p className="eyebrow eyebrow--ink"><LoaderCircle size={15} /> {messages.quietLane}</p>
@@ -326,7 +341,7 @@ export function App() {
           {working.length ? (
             <div className="quiet-grid">
               {working.map((item) => (
-                <ItemCard key={item.id} item={item} variant="quiet" busy={busy} locale={locale} messages={messages} onAction={runAction} />
+                <ItemCard key={item.id} item={item} variant="quiet" busy={busy} opening={false} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (
@@ -334,7 +349,7 @@ export function App() {
           )}
         </section>
 
-        <section className="section-block">
+        <section className={`section-block ${reviews.length ? "" : "section-block--empty"}`}>
           <div className="section-heading">
             <div>
               <p className="eyebrow eyebrow--ink"><Check size={15} /> {messages.reviewBatch}</p>
@@ -345,7 +360,7 @@ export function App() {
           {reviews.length ? (
             <div className="review-grid">
               {reviews.map((item) => (
-                <ItemCard key={item.id} item={item} variant="review" busy={busy} locale={locale} messages={messages} onAction={runAction} />
+                <ItemCard key={item.id} item={item} variant="review" busy={busy} opening={openingItemId === item.id} locale={locale} messages={messages} onAction={runAction} />
               ))}
             </div>
           ) : (

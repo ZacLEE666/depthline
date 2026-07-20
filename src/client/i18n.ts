@@ -15,6 +15,8 @@ export interface Copy {
   latest: string;
   nextHumanMove: string;
   openInCodex: string;
+  openingCodex: string;
+  openedWorkspace: string;
   protectThread: string;
   handled: string;
   snooze30: string;
@@ -84,6 +86,8 @@ export const copy: Record<Locale, Copy> = {
     latest: "Latest",
     nextHumanMove: "Next human move",
     openInCodex: "Open in Codex",
+    openingCodex: "Opening…",
+    openedWorkspace: "Codex workspace opened.",
     protectThread: "Protect this thread",
     handled: "Handled",
     snooze30: "30m",
@@ -153,6 +157,8 @@ export const copy: Record<Locale, Copy> = {
     latest: "最新进展",
     nextHumanMove: "下一步人工动作",
     openInCodex: "在 Codex 中打开",
+    openingCodex: "正在打开…",
+    openedWorkspace: "Codex 工作区已打开。",
     protectThread: "保护这条思路",
     handled: "已处理",
     snooze30: "30 分钟后",
@@ -216,6 +222,10 @@ export function localizeRuntimeMessage(message: string, locale: Locale): string 
   const unavailable = "Codex is unavailable, so Depthline is showing sample work.";
   if (message.startsWith(unavailable)) {
     return `Codex 暂不可用，Depthline 正在显示示例任务。${message.slice(unavailable.length)}`;
+  }
+  const openFailure = "Could not open Codex.";
+  if (message.startsWith(openFailure)) {
+    return `无法打开 Codex。${message.slice(openFailure.length)}`;
   }
   const known: Record<string, string> = {
     "Depthline could not refresh.": copy[locale].refreshFailed,

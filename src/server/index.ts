@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import http, { type IncomingMessage, type ServerResponse } from "node:http";
@@ -6,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSnapshot } from "./attention-engine.js";
 import { CodexAppServerClient } from "./codex-client.js";
+import { openCodexWorkspace } from "./codex-launcher.js";
 import type { CodexThread } from "./codex-types.js";
 import { demoThreads } from "./demo.js";
 import { LocalStateStore } from "./store.js";
@@ -167,9 +167,15 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
         json(response, 409, { error: "Opening Codex is disabled in demo mode." });
         return true;
       }
-      const binary = process.env.DEPTHLINE_CODEX_BIN || "codex";
-      const child = spawn(binary, ["app", thread.cwd], { detached: true, stdio: "ignore" });
-      child.unref();
+      try {
+        await openCodexWorkspace(thread.cwd);
+        json(response, 200, { ok: true, opened: "workspace" });
+      } catch (error) {
+        json(response, 502, {
+          error: `Could not open Codex. ${error instanceof Error ? error.message : String(error)}`,
+        });
+      }
+      return true;
     }
     json(response, 200, snapshot());
     return true;
