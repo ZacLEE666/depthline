@@ -9,6 +9,7 @@ type LifecycleActivity =
   | "working"
   | "waiting_approval"
   | "waiting_input"
+  | "error"
   | "complete"
   | "interrupted"
   | undefined;
@@ -22,6 +23,7 @@ interface RolloutRecord {
     call_id?: string;
     arguments?: string;
     input?: string;
+    error?: unknown;
   };
 }
 
@@ -48,7 +50,7 @@ export function lifecycleActivityFromText(text: string): LifecycleActivity {
           pendingCalls.clear();
         }
         if (payload?.type === "task_complete") {
-          lifecycle = "complete";
+          lifecycle = payload.error ? "error" : "complete";
           pendingCalls.clear();
         }
         if (payload?.type === "turn_aborted") {
@@ -108,6 +110,12 @@ export class CodexActivityMonitor {
     if (!rolloutPath) return thread;
     const activity = await this.readActivity(rolloutPath);
     if (!activity || activity === "complete" || activity === "interrupted") return thread;
+    if (activity === "error") {
+      return {
+        ...thread,
+        status: { type: "systemError", activeFlags: [] },
+      };
+    }
 
     const turns = thread.turns.length
       ? thread.turns.map((turn, index) =>

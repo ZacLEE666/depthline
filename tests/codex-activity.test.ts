@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { lifecycleActivityFromText } from "../src/server/codex-activity.js";
 
-function event(type: string): string {
-  return JSON.stringify({ timestamp: new Date().toISOString(), type: "event_msg", payload: { type } });
+function event(type: string, error?: unknown): string {
+  return JSON.stringify({ timestamp: new Date().toISOString(), type: "event_msg", payload: { type, error } });
 }
 
 function call(type: string, name: string, id: string, input = ""): string {
@@ -30,6 +30,13 @@ describe("Codex rollout activity", () => {
   it("reports the latest completed lifecycle", () => {
     expect(lifecycleActivityFromText([event("task_started"), event("task_complete")].join("\n")))
       .toBe("complete");
+  });
+
+  it("treats a completion event carrying an error as failed work", () => {
+    expect(lifecycleActivityFromText([
+      event("task_started"),
+      event("task_complete", { message: "stream disconnected before completion" }),
+    ].join("\n"))).toBe("error");
   });
 
   it("ignores a partial JSONL record at the beginning of a tail", () => {
