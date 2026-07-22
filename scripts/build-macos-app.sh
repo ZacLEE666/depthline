@@ -28,6 +28,7 @@ mkdir -p "$STAGING_APP/Contents/MacOS" "$STAGING_APP/Contents/Resources"
   -o "$STAGING_APP/Contents/MacOS/Depthline"
 
 cp "$PROJECT_DIR/macos/Info.plist" "$STAGING_APP/Contents/Info.plist"
+cp "$PROJECT_DIR/macos/Depthline.icns" "$STAGING_APP/Contents/Resources/Depthline.icns"
 cp "$NODE_BIN" "$STAGING_APP/Contents/Resources/node"
 cp -R "$PROJECT_DIR/dist" "$STAGING_APP/Contents/Resources/dist"
 chmod +x "$STAGING_APP/Contents/MacOS/Depthline" "$STAGING_APP/Contents/Resources/node"

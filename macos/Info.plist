@@ -10,6 +10,8 @@
   <string>Depthline</string>
   <key>CFBundleIdentifier</key>
   <string>com.zaclee.depthline</string>
+  <key>CFBundleIconFile</key>
+  <string>Depthline.icns</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
