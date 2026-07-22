@@ -128,7 +128,7 @@ function ItemCard({ item, variant = "decision", busy, opening, locale, messages,
             <Check size={15} /> {messages.handled}
           </button>
         )}
-        {variant === "decision" && (
+        {(variant === "decision" || variant === "review") && (
           <button className="button button--ghost" disabled={busy} onClick={() => onAction("delay", item)}>
             <Hourglass size={15} /> {messages.delayDecision}
           </button>

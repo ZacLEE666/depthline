@@ -194,6 +194,22 @@ describe("attention engine", () => {
     expect(item.interruptionScore).toBe(1);
   });
 
+  it("returns a delayed completed result to review when delay is cleared", () => {
+    const persisted = state();
+    persisted.threadPreferences["thread-1"] = {
+      pendingReviewTurnId: "turn-1",
+      delayedAt: "2026-07-20T07:55:00.000Z",
+      delayedTurnId: "turn-1",
+    };
+
+    expect(deriveAttentionItem(thread(), persisted, now).state).toBe("delayed");
+
+    persisted.threadPreferences["thread-1"].delayedAt = undefined;
+    persisted.threadPreferences["thread-1"].delayedTurnId = undefined;
+
+    expect(deriveAttentionItem(thread(), persisted, now).state).toBe("ready_review");
+  });
+
   it("automatically releases delay when a new turn starts", () => {
     const persisted = state();
     persisted.threadPreferences["thread-1"] = {

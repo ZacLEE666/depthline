@@ -18,6 +18,10 @@ When several agents are working asynchronously, help me know exactly when my jud
 
 1. Connect locally to Codex through `codex app-server`.
 2. Normalize threads into `needs input`, `needs approval`, `error`, `ready for review`, `working quietly`, `delayed`, and `parked`.
+
+The editable lifecycle diagram is available at [`depthline-attention-state-machine.drawio`](depthline-attention-state-machine.drawio), with a PNG preview alongside it.
+
+![Depthline attention state machine](depthline-attention-state-machine.png)
 3. Present one decision inbox, one quiet lane, and one batched review lane.
 4. Generate a deterministic context capsule from data already returned by Codex.
 5. Allow a 50-minute focus block, snoozing, marking handled, and opening the task's workspace in Codex.
