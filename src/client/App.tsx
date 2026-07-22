@@ -9,6 +9,7 @@ import {
   Coffee,
   Focus,
   FolderKanban,
+  Hourglass,
   LoaderCircle,
   LayoutList,
   Pause,
@@ -17,6 +18,7 @@ import {
   ShieldCheck,
   Star,
   TimerReset,
+  Undo2,
 } from "lucide-react";
 import { api } from "./api";
 import type { AttentionItem, AttentionState, DepthlineSnapshot } from "../shared/types";
@@ -52,17 +54,20 @@ function StateIcon({ state }: { state: AttentionState }) {
   if (state === "error") return <RefreshCw size={16} />;
   if (state === "ready_review") return <Check size={16} />;
   if (state === "working") return <LoaderCircle className="spin" size={16} />;
+  if (state === "delayed") return <Hourglass size={16} />;
   return <Pause size={16} />;
 }
 
+type ItemAction = "focus" | "snooze" | "delay" | "handled" | "follow" | "open";
+
 interface ItemCardProps {
   item: AttentionItem;
-  variant?: "decision" | "quiet" | "review" | "follow";
+  variant?: "decision" | "quiet" | "review" | "delay" | "follow";
   busy: boolean;
   opening: boolean;
   locale: Locale;
   messages: Copy;
-  onAction: (action: "focus" | "snooze" | "handled" | "follow" | "open", item: AttentionItem) => void;
+  onAction: (action: ItemAction, item: AttentionItem) => void;
 }
 
 function ItemCard({ item, variant = "decision", busy, opening, locale, messages, onAction }: ItemCardProps) {
@@ -123,6 +128,16 @@ function ItemCard({ item, variant = "decision", busy, opening, locale, messages,
             <Check size={15} /> {messages.handled}
           </button>
         )}
+        {variant === "decision" && (
+          <button className="button button--ghost" disabled={busy} onClick={() => onAction("delay", item)}>
+            <Hourglass size={15} /> {messages.delayDecision}
+          </button>
+        )}
+        {variant === "delay" && (
+          <button className="button button--ghost" disabled={busy} onClick={() => onAction("delay", item)}>
+            <Undo2 size={15} /> {messages.restoreDecision}
+          </button>
+        )}
         <button className="button button--ghost" disabled={busy} onClick={() => onAction("snooze", item)}>
           <Clock3 size={15} /> {messages.snooze30}
         </button>
@@ -158,6 +173,7 @@ function StatisticsView({ snapshot, locale, messages }: { snapshot: DepthlineSna
     { key: "blocking", label: messages.statsNeedsYou, value: blocking },
     { key: "working", label: messages.quietlyWorking, value: stats.stateCounts.working },
     { key: "review", label: messages.batchReview, value: stats.stateCounts.ready_review },
+    { key: "delayed", label: messages.delayed, value: stats.stateCounts.delayed },
     { key: "parked", label: messages.parked, value: stats.stateCounts.parked },
   ];
 
@@ -279,12 +295,12 @@ function StatisticsView({ snapshot, locale, messages }: { snapshot: DepthlineSna
         </div>
         <div className="project-table-wrap">
           <table className="project-table">
-            <thead><tr><th>{messages.statsProject}</th><th>{messages.statsRunning}</th><th>{messages.statsBlocking}</th><th>{messages.statsAwaitingReview}</th><th>{messages.statsTotal}</th></tr></thead>
+            <thead><tr><th>{messages.statsProject}</th><th>{messages.statsRunning}</th><th>{messages.statsBlocking}</th><th>{messages.statsAwaitingReview}</th><th>{messages.statsDelayed}</th><th>{messages.statsTotal}</th></tr></thead>
             <tbody>
               {stats.projects.map((project) => (
                 <tr key={project.project}>
                   <td><strong>{project.project}</strong><span>{formatRelativeTime(project.latestUpdate, locale)}</span></td>
-                  <td>{project.working}</td><td>{project.needsYou}</td><td>{project.readyForReview}</td><td>{project.total}</td>
+                  <td>{project.working}</td><td>{project.needsYou}</td><td>{project.readyForReview}</td><td>{project.delayed}</td><td>{project.total}</td>
                 </tr>
               ))}
             </tbody>
@@ -348,11 +364,12 @@ export function App() {
   const decisions = visibleItems.filter((item) => item.urgency === "blocking");
   const working = visibleItems.filter((item) => item.state === "working");
   const reviews = visibleItems.filter((item) => item.state === "ready_review");
+  const delayed = visibleItems.filter((item) => item.state === "delayed");
   const primaryThread =
     visibleItems.find((item) => item.isFocused) ?? decisions[0] ?? working[0] ?? reviews[0];
 
   const runAction = async (
-    action: "focus" | "snooze" | "handled" | "follow" | "open",
+    action: ItemAction,
     item: AttentionItem,
   ) => {
     setBusy(true);
@@ -368,9 +385,11 @@ export function App() {
             ? await api.startFocus(50, item.id)
             : action === "snooze"
               ? await api.snooze(item.id)
-              : action === "follow"
-                ? await api.follow(item.id, !item.isFollowed)
-                : await api.handled(item.id);
+              : action === "delay"
+                ? await api.delay(item.id, item.state !== "delayed")
+                : action === "follow"
+                  ? await api.follow(item.id, !item.isFollowed)
+                  : await api.handled(item.id);
         setSnapshot(next);
       }
       setError(undefined);
@@ -458,6 +477,7 @@ export function App() {
               <div><span>{messages.statsNeedsYou}</span><b>{snapshot.summary.needsYou}</b></div>
               <div><span>{messages.quietlyWorking}</span><b>{snapshot.summary.workingQuietly}</b></div>
               <div><span>{messages.batchReview}</span><b>{snapshot.summary.readyForReview}</b></div>
+              <div><span>{messages.delayed}</span><b>{snapshot.summary.delayed}</b></div>
               <div><span>{messages.parked}</span><b>{snapshot.summary.parked}</b></div>
             </div>
             {snapshot.focus.active ? (
@@ -503,6 +523,25 @@ export function App() {
             </div>
           ) : (
             <EmptyLane>{messages.noDecision}</EmptyLane>
+          )}
+        </section>
+
+        <section className={`section-block section-block--delayed ${delayed.length ? "" : "section-block--empty"}`}>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow eyebrow--ink"><Hourglass size={15} /> {messages.delayedSection}</p>
+              <h2>{messages.delayedHeading}</h2>
+            </div>
+            <span>{messages.delayedCount(delayed.length)}</span>
+          </div>
+          {delayed.length ? (
+            <div className="delayed-grid">
+              {delayed.map((item) => (
+                <ItemCard key={item.id} item={item} variant="delay" busy={busy} opening={openingItemId === item.id} locale={locale} messages={messages} onAction={runAction} />
+              ))}
+            </div>
+          ) : (
+            <EmptyLane>{messages.noDelayed}</EmptyLane>
           )}
         </section>
 

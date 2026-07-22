@@ -23,6 +23,8 @@ export interface Copy {
   protectThread: string;
   handled: string;
   snooze30: string;
+  delayDecision: string;
+  restoreDecision: string;
   follow: string;
   unfollow: string;
   followedSection: string;
@@ -50,11 +52,16 @@ export interface Copy {
   decisionsNeedYou: (count: number) => string;
   quietlyWorking: string;
   batchReview: string;
+  delayed: string;
   parked: string;
   decisionInbox: string;
   decisionHeading: string;
   blockingCount: (count: number) => string;
   noDecision: string;
+  delayedSection: string;
+  delayedHeading: string;
+  delayedCount: (count: number) => string;
+  noDelayed: string;
   quietLane: string;
   quietHeading: string;
   runningCount: (count: number) => string;
@@ -91,6 +98,7 @@ export interface Copy {
   statsRunning: string;
   statsBlocking: string;
   statsAwaitingReview: string;
+  statsDelayed: string;
   statsTotal: string;
   statsConversationSignal: string;
   statsConversationTitle: string;
@@ -120,6 +128,7 @@ export const copy: Record<Locale, Copy> = {
       error: "Needs recovery",
       ready_review: "Ready for review",
       working: "Working quietly",
+      delayed: "Delayed",
       parked: "Parked",
     },
     nextActions: {
@@ -128,6 +137,7 @@ export const copy: Record<Locale, Copy> = {
       error: "Inspect the failed turn, then retry or change direction.",
       ready_review: "Review the result against the task's definition of done.",
       working: "No action. Let the agent work quietly.",
+      delayed: "Leave this decision aside until you are ready to reconsider it.",
       parked: "Leave parked until this work becomes relevant again.",
     },
     justNow: "just now",
@@ -142,6 +152,8 @@ export const copy: Record<Locale, Copy> = {
     protectThread: "Protect this thread",
     handled: "Handled",
     snooze30: "30m",
+    delayDecision: "Decide later",
+    restoreDecision: "Restore decision",
     follow: "Follow this task",
     unfollow: "Stop following",
     followedSection: "Following",
@@ -171,11 +183,16 @@ export const copy: Record<Locale, Copy> = {
     decisionsNeedYou: (count) => `${count === 1 ? "decision needs" : "decisions need"} you now`,
     quietlyWorking: "Quietly working",
     batchReview: "Batch review",
+    delayed: "Delayed",
     parked: "Parked",
     decisionInbox: "Needs you now",
     decisionHeading: "Only the moments that require a human",
     blockingCount: (count) => `${count} blocking`,
     noDecision: "No agent needs your judgment right now.",
+    delayedSection: "Decide later",
+    delayedHeading: "Deliberately deferred decisions",
+    delayedCount: (count) => `${count} delayed`,
+    noDelayed: "No decisions have been deferred.",
     quietLane: "Quiet lane",
     quietHeading: "Work that should not occupy your mind",
     runningCount: (count) => `${count} running`,
@@ -212,6 +229,7 @@ export const copy: Record<Locale, Copy> = {
     statsRunning: "Running",
     statsBlocking: "Blocking",
     statsAwaitingReview: "Review",
+    statsDelayed: "Delayed",
     statsTotal: "Total",
     statsConversationSignal: "Conversation frequency",
     statsConversationTitle: "Where conversations happened",
@@ -239,6 +257,7 @@ export const copy: Record<Locale, Copy> = {
       error: "需要恢复",
       ready_review: "等待验收",
       working: "安静执行中",
+      delayed: "稍后决定",
       parked: "已停放",
     },
     nextActions: {
@@ -247,6 +266,7 @@ export const copy: Record<Locale, Copy> = {
       error: "检查失败的轮次，然后重试或调整方向。",
       ready_review: "按照任务的完成定义验收结果。",
       working: "无需操作，让 Agent 安静执行。",
+      delayed: "先放下这个决定，准备好时再恢复处理。",
       parked: "保持停放，等这项工作重新相关时再处理。",
     },
     justNow: "刚刚",
@@ -261,6 +281,8 @@ export const copy: Record<Locale, Copy> = {
     protectThread: "保护这条思路",
     handled: "已处理",
     snooze30: "30 分钟后",
+    delayDecision: "稍后决定",
+    restoreDecision: "恢复处理",
     follow: "持续关注",
     unfollow: "取消关注",
     followedSection: "持续关注",
@@ -289,11 +311,16 @@ export const copy: Record<Locale, Copy> = {
     decisionsNeedYou: (count) => `现在有 ${count} 项决策需要你`,
     quietlyWorking: "安静执行",
     batchReview: "批量验收",
+    delayed: "稍后决定",
     parked: "已停放",
     decisionInbox: "需要你处理",
     decisionHeading: "这里只保留真正需要人的时刻",
     blockingCount: (count) => `${count} 项阻塞`,
     noDecision: "现在没有 Agent 需要你的判断。",
+    delayedSection: "稍后决定",
+    delayedHeading: "暂时无法做出的决定",
+    delayedCount: (count) => `${count} 项已暂缓`,
+    noDelayed: "当前没有暂缓的决定。",
     quietLane: "安静执行区",
     quietHeading: "这些工作不应占据你的大脑",
     runningCount: (count) => `${count} 项运行中`,
@@ -330,6 +357,7 @@ export const copy: Record<Locale, Copy> = {
     statsRunning: "运行中",
     statsBlocking: "阻塞",
     statsAwaitingReview: "待验收",
+    statsDelayed: "稍后决定",
     statsTotal: "总计",
     statsConversationSignal: "对话频次",
     statsConversationTitle: "对话发生在哪些项目",

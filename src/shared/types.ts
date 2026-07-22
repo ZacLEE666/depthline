@@ -4,6 +4,7 @@ export type AttentionState =
   | "error"
   | "ready_review"
   | "working"
+  | "delayed"
   | "parked";
 
 export type Urgency = "blocking" | "batch" | "quiet";
@@ -42,6 +43,7 @@ export interface SnapshotSummary {
   needsYou: number;
   workingQuietly: number;
   readyForReview: number;
+  delayed: number;
   parked: number;
 }
 
@@ -83,6 +85,8 @@ export interface ThreadPreference {
   observedTurnId?: string;
   observedTurnStatus?: "completed" | "interrupted" | "failed" | "inProgress";
   pendingReviewTurnId?: string;
+  delayedAt?: string;
+  delayedTurnId?: string;
 }
 
 export interface PersistedState {

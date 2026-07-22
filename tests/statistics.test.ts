@@ -27,7 +27,7 @@ function snapshot(items: AttentionItem[]): DepthlineSnapshot {
     generatedAt: "2026-07-20T08:00:00.000Z",
     items,
     focus: { active: false, suppressedCount: 0 },
-    summary: { needsYou: 1, workingQuietly: 1, readyForReview: 1, parked: 1 },
+    summary: { needsYou: 1, workingQuietly: 1, readyForReview: 1, delayed: 0, parked: 1 },
     conversationActivity: { today: "2026-07-20", todayTotal: 0, sourceThreadCount: 0, days: [], maxDailyCount: 0, projects: [] },
     privacy: { rawContentPersisted: false, bindAddress: "127.0.0.1" },
   };
@@ -51,5 +51,17 @@ describe("attention statistics", () => {
   it("does not invent a rate when there is no attention-bearing work", () => {
     expect(buildAttentionStats(snapshot([item("park", "parked", "alpha")])).attentionProtectionRate)
       .toBeNull();
+  });
+
+  it("counts delayed decisions as protected attention without active parallel load", () => {
+    const stats = buildAttentionStats(snapshot([
+      item("input", "needs_input", "alpha"),
+      item("later", "delayed", "alpha"),
+    ]));
+
+    expect(stats.attentionProtectionRate).toBe(50);
+    expect(stats.protectedItems).toBe(1);
+    expect(stats.parallelLoad).toBe(1);
+    expect(stats.projects[0].delayed).toBe(1);
   });
 });

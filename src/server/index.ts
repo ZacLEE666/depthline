@@ -168,7 +168,7 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
     return true;
   }
 
-  const actionMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/(snooze|handled|follow|open)$/);
+  const actionMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/(snooze|delay|handled|follow|open)$/);
   if (request.method === "POST" && actionMatch) {
     const threadId = decodeURIComponent(actionMatch[1]);
     const action = actionMatch[2];
@@ -186,6 +186,17 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
           snoozedUntil: new Date(Date.now() + minutes * 60_000).toISOString(),
         };
       });
+    } else if (action === "delay") {
+      const body = await bodyJson(request);
+      const delayed = body.delayed === true;
+      await updateState((state) => {
+        state.threadPreferences[threadId] = {
+          ...state.threadPreferences[threadId],
+          snoozedUntil: undefined,
+          delayedAt: delayed ? new Date().toISOString() : undefined,
+          delayedTurnId: delayed ? (thread.turns.at(-1)?.id ?? "__thread__") : undefined,
+        };
+      });
     } else if (action === "handled") {
       await updateState((state) => {
         const completedTurnId = thread.turns.at(-1)?.status === "completed"
@@ -195,6 +206,8 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
           ...state.threadPreferences[threadId],
           handledAt: new Date().toISOString(),
           snoozedUntil: undefined,
+          delayedAt: undefined,
+          delayedTurnId: undefined,
           pendingReviewTurnId:
             state.threadPreferences[threadId]?.pendingReviewTurnId === completedTurnId
               ? undefined

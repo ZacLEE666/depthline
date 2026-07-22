@@ -13,6 +13,7 @@ Depthline stores only:
 
 - focus-session end time and selected thread ID;
 - snooze timestamps;
+- delayed-decision timestamps and turn identifiers;
 - handled timestamps;
 - future attention preferences that follow the same metadata-only rule.
 

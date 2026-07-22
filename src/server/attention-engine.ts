@@ -114,6 +114,8 @@ export function observeThreadTransitions(threads: CodexThread[], state: Persiste
       observedTurnId: turn.id,
       observedTurnStatus: turn.status,
       pendingReviewTurnId,
+      delayedAt: turnChanged ? undefined : existing.delayedAt,
+      delayedTurnId: turnChanged ? undefined : existing.delayedTurnId,
     };
     changed = true;
   }
@@ -133,6 +135,8 @@ function nextActionFor(state: AttentionState): string {
       return "Review the result against the task's definition of done.";
     case "working":
       return "No action. Let the agent work quietly.";
+    case "delayed":
+      return "Leave this decision aside until you are ready to reconsider it.";
     case "parked":
       return "Leave parked until this work becomes relevant again.";
   }
@@ -207,9 +211,16 @@ export function deriveAttentionItem(
     : false;
   const title = displayTitle(thread.name || thread.preview);
   const latest = trimText(lastAgentMessage(thread) || thread.preview);
-  const stateResult = snoozed
-    ? { ...classification, urgency: "quiet" as const, score: 0 }
-    : classification;
+  const delayed = Boolean(
+    preference.delayedAt &&
+    preference.delayedTurnId &&
+    preference.delayedTurnId === (thread.turns.at(-1)?.id ?? "__thread__"),
+  );
+  const stateResult = delayed
+    ? { state: "delayed" as const, urgency: "quiet" as const, score: 1 }
+    : snoozed
+      ? { ...classification, urgency: "quiet" as const, score: 0 }
+      : classification;
 
   return {
     id: thread.id,
@@ -277,6 +288,7 @@ export function buildSnapshot(
       needsYou: visibleItems.filter((item) => item.urgency === "blocking").length,
       workingQuietly: visibleItems.filter((item) => item.state === "working").length,
       readyForReview: visibleItems.filter((item) => item.state === "ready_review").length,
+      delayed: visibleItems.filter((item) => item.state === "delayed").length,
       parked: visibleItems.filter((item) => item.state === "parked").length,
     },
     conversationActivity: buildConversationActivity(threads, now),

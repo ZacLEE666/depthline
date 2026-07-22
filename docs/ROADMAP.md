@@ -5,7 +5,7 @@
 - [x] Local Codex thread adapter
 - [x] Decision inbox, quiet lane, and review batch
 - [x] Context capsules
-- [x] Focus block, snooze, and handled state
+- [x] Focus block, short snooze, persistent delay/restore, and handled state
 - [x] Demo mode and privacy boundary
 - [ ] Validate against ten daily multi-agent users
 

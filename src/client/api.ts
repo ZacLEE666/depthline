@@ -37,6 +37,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ minutes }),
     }),
+  delay: (threadId: string, delayed: boolean) =>
+    request<DepthlineSnapshot>(`/api/items/${encodeURIComponent(threadId)}/delay`, {
+      method: "POST",
+      body: JSON.stringify({ delayed }),
+    }),
   handled: (threadId: string) =>
     request<DepthlineSnapshot>(`/api/items/${encodeURIComponent(threadId)}/handled`, {
       method: "POST",

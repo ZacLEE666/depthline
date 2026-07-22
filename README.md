@@ -27,10 +27,11 @@ Most agent tools optimize agent throughput. Depthline optimizes the scarce resou
   - needs recovery;
   - ready for review;
   - working quietly;
+  - delayed for a later decision,
   - parked.
 - Keeps active work silent unless Codex is waiting on a human.
 - Generates a local context capsule with the goal, latest result, and next human move.
-- Provides a 50-minute depth block, snooze, handled state, and a link back to the Codex workspace.
+- Provides a 50-minute depth block, short snooze, persistent delay/restore, handled state, and a link back to the Codex workspace.
 - Supports Chinese and English, follows the browser language by default, and remembers the local choice.
 - Persists attention metadata only. Raw prompts and responses stay in process memory.
 
@@ -106,7 +107,7 @@ model to decide when to interrupt you.
 - It never reads Codex credentials or private SQLite tables.
 - It reads only lifecycle marker types from the tail of local Codex rollout files to detect running and completed work; message content is neither extracted nor persisted.
 - It never automatically approves a Codex action.
-- It stores only focus, snooze, handled, and thread identifier metadata in `~/.depthline/state.json`.
+- It stores only focus, snooze, delay, handled, and thread identifier metadata in `~/.depthline/state.json`.
 - Browser assets are bundled; there are no remote fonts, analytics, or tracking pixels.
 
 See [docs/PRIVACY.md](docs/PRIVACY.md) and [SECURITY.md](SECURITY.md).

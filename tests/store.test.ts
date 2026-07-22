@@ -41,4 +41,20 @@ describe("LocalStateStore", () => {
     expect(saved.threadPreferences["daily-plan"]?.pinned).toBe(true);
     expect(await readFile(store.filePath, "utf8")).not.toContain("conversation content");
   });
+
+  it("persists only the turn marker needed for a delayed decision", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "depthline-delay-test-"));
+    directories.push(directory);
+    const store = new LocalStateStore(directory);
+
+    await store.update((state) => {
+      state.threadPreferences["decision"] = {
+        delayedAt: "2026-07-22T08:00:00.000Z",
+        delayedTurnId: "turn-1",
+      };
+    });
+
+    const saved = await store.read();
+    expect(saved.threadPreferences.decision?.delayedTurnId).toBe("turn-1");
+  });
 });

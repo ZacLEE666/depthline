@@ -6,6 +6,7 @@ export interface ProjectAttentionStats {
   working: number;
   needsYou: number;
   readyForReview: number;
+  delayed: number;
   parked: number;
   latestUpdate: string;
 }
@@ -27,6 +28,7 @@ export function buildAttentionStats(snapshot: DepthlineSnapshot): AttentionStats
     error: 0,
     ready_review: 0,
     working: 0,
+    delayed: 0,
     parked: 0,
   };
   const projects = new Map<string, ProjectAttentionStats>();
@@ -39,6 +41,7 @@ export function buildAttentionStats(snapshot: DepthlineSnapshot): AttentionStats
       working: 0,
       needsYou: 0,
       readyForReview: 0,
+      delayed: 0,
       parked: 0,
       latestUpdate: item.updatedAt,
     };
@@ -46,13 +49,14 @@ export function buildAttentionStats(snapshot: DepthlineSnapshot): AttentionStats
     if (item.state === "working") current.working += 1;
     if (item.urgency === "blocking") current.needsYou += 1;
     if (item.state === "ready_review") current.readyForReview += 1;
+    if (item.state === "delayed") current.delayed += 1;
     if (item.state === "parked") current.parked += 1;
     if (item.updatedAt > current.latestUpdate) current.latestUpdate = item.updatedAt;
     projects.set(item.project, current);
   }
 
   const needsYou = stateCounts.needs_input + stateCounts.needs_approval + stateCounts.error;
-  const protectedItems = stateCounts.working + stateCounts.ready_review;
+  const protectedItems = stateCounts.working + stateCounts.ready_review + stateCounts.delayed;
   const attentionItems = needsYou + protectedItems;
 
   return {
@@ -64,8 +68,8 @@ export function buildAttentionStats(snapshot: DepthlineSnapshot): AttentionStats
     totalVisible: visible.length,
     projects: [...projects.values()]
       .sort((a, b) => {
-        const activeA = a.working + a.needsYou + a.readyForReview;
-        const activeB = b.working + b.needsYou + b.readyForReview;
+        const activeA = a.working + a.needsYou + a.readyForReview + a.delayed;
+        const activeB = b.working + b.needsYou + b.readyForReview + b.delayed;
         return activeB - activeA || b.latestUpdate.localeCompare(a.latestUpdate);
       })
       .slice(0, 10),

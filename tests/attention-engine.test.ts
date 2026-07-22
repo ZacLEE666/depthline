@@ -177,6 +177,62 @@ describe("attention engine", () => {
     expect(item.interruptionScore).toBe(0);
   });
 
+  it("moves a deferred decision into a persistent delayed state", () => {
+    const persisted = state();
+    persisted.threadPreferences["thread-1"] = {
+      delayedAt: "2026-07-20T07:55:00.000Z",
+      delayedTurnId: "turn-1",
+    };
+    const item = deriveAttentionItem(
+      thread({ status: { type: "active", activeFlags: ["waitingOnUserInput"] } }),
+      persisted,
+      now,
+    );
+
+    expect(item.state).toBe("delayed");
+    expect(item.urgency).toBe("quiet");
+    expect(item.interruptionScore).toBe(1);
+  });
+
+  it("automatically releases delay when a new turn starts", () => {
+    const persisted = state();
+    persisted.threadPreferences["thread-1"] = {
+      observedTurnId: "turn-1",
+      observedTurnStatus: "completed",
+      delayedAt: "2026-07-20T07:55:00.000Z",
+      delayedTurnId: "turn-1",
+    };
+    const nextTurn = thread({
+      status: { type: "active", activeFlags: [] },
+      turns: [
+        ...thread().turns,
+        { id: "turn-2", status: "inProgress", items: [] },
+      ],
+    });
+
+    observeThreadTransitions([nextTurn], persisted);
+
+    expect(persisted.threadPreferences["thread-1"].delayedAt).toBeUndefined();
+    expect(deriveAttentionItem(nextTurn, persisted, now).state).toBe("working");
+  });
+
+  it("can delay a thread-level error even when no turn is available", () => {
+    const persisted = state();
+    persisted.threadPreferences["thread-1"] = {
+      delayedAt: "2026-07-20T07:55:00.000Z",
+      delayedTurnId: "__thread__",
+    };
+
+    const item = deriveAttentionItem(
+      thread({ status: { type: "systemError" }, turns: [] }),
+      persisted,
+      now,
+    );
+
+    expect(item.state).toBe("delayed");
+    expect(item.urgency).toBe("quiet");
+  });
+
   it("counts only unsnoozed blocking work in human bandwidth", () => {
     const persisted = state();
     persisted.focus = { until: "2026-07-20T09:00:00.000Z" };
