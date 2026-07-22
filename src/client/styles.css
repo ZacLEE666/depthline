@@ -32,6 +32,7 @@ button:focus-visible { outline: 3px solid rgba(239, 130, 111, 0.45); outline-off
 .topbar { min-height: 58px; padding-top: env(safe-area-inset-top, 0px); position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: rgba(243, 240, 232, 0.96); border-bottom: 1px solid rgba(217, 212, 200, 0.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .topbar::before { content: ""; position: absolute; inset: 0 calc((100vw - 100%) / -2); z-index: -1; background: inherit; border-bottom: inherit; pointer-events: none; }
 .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.035em; font-size: 18px; }
+.logo small { margin-left: -5px; color: var(--ink-soft); font-size: 9px; font-weight: 600; letter-spacing: 0.02em; }
 .logo-mark { width: 25px; height: 25px; border: 1.5px solid currentColor; border-radius: 50%; display: grid; place-items: center; }
 .logo-mark::before, .logo-mark::after, .logo-mark span { content: ""; display: block; width: 12px; height: 1.5px; background: currentColor; position: absolute; }
 .logo-mark::before { transform: translateY(-4px); }

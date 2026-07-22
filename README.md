@@ -1,4 +1,6 @@
-# Depthline
+# 守深 · Depthline
+
+> AI 可以并行，人不必分心。守深是一款开源、本地优先的 AI 协作注意力管理工具。
 
 **Protect human depth in the age of parallel intelligence.**
 
@@ -39,7 +41,7 @@ Most agent tools optimize agent throughput. Depthline optimizes the scarce resou
 
 ### macOS app (no install)
 
-Double-click `release/Depthline.app`. It runs without a Terminal window and stays in the macOS menu bar. The menu provides Open, Restart, Stop, Logs, and Quit. The app bundles its own Node.js runtime and serves Depthline at `http://127.0.0.1:5173`.
+Double-click `release/守深.app`. It runs without a Terminal window and stays in the macOS menu bar. The menu provides Open, Restart, Stop, Logs, and Quit. The app bundles its own Node.js runtime and serves Depthline at `http://127.0.0.1:5173`.
 
 To build the standalone app and zip archive locally:
 
@@ -50,7 +52,7 @@ npm run build:mac
 
 Outputs:
 
-- `release/Depthline.app`
+- `release/守深.app`
 - `release/Depthline-mac-arm64.zip`
 
 ### Development

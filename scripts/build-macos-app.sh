@@ -3,9 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="${0:A:h}"
 PROJECT_DIR="${SCRIPT_DIR:h}"
-APP_NAME="Depthline.app"
+APP_NAME="守深.app"
 RELEASE_DIR="$PROJECT_DIR/release"
 FINAL_APP="$RELEASE_DIR/$APP_NAME"
+LEGACY_APP="$RELEASE_DIR/Depthline.app"
 FINAL_ZIP="$RELEASE_DIR/Depthline-mac-arm64.zip"
 STAGING_DIR="$(mktemp -d)"
 STAGING_APP="$STAGING_DIR/$APP_NAME"
@@ -36,6 +37,7 @@ chmod +x "$STAGING_APP/Contents/MacOS/Depthline" "$STAGING_APP/Contents/Resource
 
 mkdir -p "$RELEASE_DIR"
 rm -rf "$FINAL_APP"
+rm -rf "$LEGACY_APP"
 rm -f "$FINAL_ZIP"
 mv "$STAGING_APP" "$FINAL_APP"
 /usr/bin/ditto -c -k --keepParent "$FINAL_APP" "$FINAL_ZIP"

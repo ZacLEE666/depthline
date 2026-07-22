@@ -35,16 +35,16 @@
 
 - (void)configureMenuBar {
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    NSImage *image = [NSImage imageWithSystemSymbolName:@"circle.grid.cross" accessibilityDescription:@"Depthline"];
+    NSImage *image = [NSImage imageWithSystemSymbolName:@"circle.grid.cross" accessibilityDescription:@"守深"];
     self.statusItem.button.image = image;
-    self.statusItem.button.toolTip = @"Depthline";
+    self.statusItem.button.toolTip = @"守深 · Depthline";
 
     NSMenu *menu = [[NSMenu alloc] init];
     self.statusMenuItem = [[NSMenuItem alloc] initWithTitle:@"状态：正在启动" action:nil keyEquivalent:@""];
     self.statusMenuItem.enabled = NO;
     [menu addItem:self.statusMenuItem];
     [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItem:[self item:@"打开 Depthline" action:@selector(openDashboard:) key:@"o"]];
+    [menu addItem:[self item:@"打开守深" action:@selector(openDashboard:) key:@"o"]];
     self.restartMenuItem = [self item:@"重启服务" action:@selector(restartServer:) key:@"r"];
     [menu addItem:self.restartMenuItem];
     self.stopMenuItem = [self item:@"停止服务" action:@selector(stopServer:) key:@"s"];
@@ -52,7 +52,7 @@
     [menu addItem:[NSMenuItem separatorItem]];
     [menu addItem:[self item:@"打开日志" action:@selector(openLog:) key:@"l"]];
     [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItem:[self item:@"退出 Depthline" action:@selector(quitApp:) key:@"q"]];
+    [menu addItem:[self item:@"退出守深" action:@selector(quitApp:) key:@"q"]];
     self.statusItem.menu = menu;
 }
 
@@ -68,7 +68,7 @@
 
 - (void)restartServer:(id)sender {
     if (self.externallyManaged) {
-        [self showAlert:@"Depthline 已由其他进程运行" message:@"请先停止原来的开发服务，再从菜单栏启动 Depthline。"];
+        [self showAlert:@"守深已由其他进程运行" message:@"请先停止原来的开发服务，再从菜单栏启动守深。"];
         return;
     }
     __weak typeof(self) weakSelf = self;
@@ -123,14 +123,14 @@
     if (![[NSFileManager defaultManager] isExecutableFileAtPath:nodeURL.path] ||
         ![[NSFileManager defaultManager] fileExistsAtPath:serverURL.path]) {
         [self setStatus:@"状态：应用文件不完整" running:NO];
-        [self showAlert:@"Depthline 无法启动" message:@"应用内缺少运行文件，请重新构建 Depthline.app。"];
+        [self showAlert:@"守深无法启动" message:@"应用内缺少运行文件，请重新构建守深.app。"];
         return;
     }
 
     NSError *error = nil;
     if (![self prepareLog:&error]) {
         [self setStatus:@"状态：日志不可用" running:NO];
-        [self showAlert:@"Depthline 启动失败" message:error.localizedDescription];
+        [self showAlert:@"守深启动失败" message:error.localizedDescription];
         return;
     }
 
@@ -161,7 +161,7 @@
     if (![task launchAndReturnError:&error]) {
         [self setStatus:@"状态：启动失败" running:NO];
         [self appendLog:[NSString stringWithFormat:@"Launcher error: %@\n", error.localizedDescription]];
-        [self showAlert:@"Depthline 启动失败" message:@"请从菜单栏打开日志查看原因。"];
+        [self showAlert:@"守深启动失败" message:@"请从菜单栏打开日志查看原因。"];
         return;
     }
     self.serverTask = task;

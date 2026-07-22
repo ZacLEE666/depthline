@@ -245,8 +245,8 @@ export const copy: Record<Locale, Copy> = {
     statsMore: "More",
   },
   "zh-CN": {
-    documentTitle: "Depthline — 让深度思考不被打断",
-    documentDescription: "当 AI Agent 并行工作时，Depthline 帮助人类守住思考深度。",
+    documentTitle: "守深 · Depthline — 让深度思考不被打断",
+    documentDescription: "当 AI Agent 并行工作时，守深帮助人类守住思考深度。",
     languageLabel: "界面语言",
     navigationLabel: "主导航",
     navigationWork: "事项",
@@ -302,7 +302,7 @@ export const copy: Record<Locale, Copy> = {
     idleTitle: "让 Agent 继续运行，只保留一条人的思路。",
     focusSupport: (count) =>
       `${count} 项非阻塞工作正在保持安静。只有真正需要判断的事项才应打断你。`,
-    idleSupport: "Depthline 将人的真实决策与进度噪音分开，并在你选择返回时恢复最小必要上下文。",
+    idleSupport: "守深将人的真实决策与进度噪音分开，并在你选择返回时恢复最小必要上下文。",
     endFocus: "结束本次专注",
     startFocus: "开始 50 分钟深度工作",
     batchNonBlocking: "非阻塞事项统一批处理",
@@ -330,7 +330,7 @@ export const copy: Record<Locale, Copy> = {
     readyCount: (count) => `${count} 项待验收`,
     noReview: "当前没有已完成工作等待验收。",
     footerVision: "Codex 事项的本地注意力控制台。",
-    footerPrivacy: "Codex 原始内容只存在于内存中，Depthline 永不持久化保存。",
+    footerPrivacy: "Codex 原始内容只存在于内存中，守深永不持久化保存。",
     workConsole: "事项控制台",
     workConsoleTitle: "管理并行事项",
     workConsoleSupport: "直接查看谁在运行、哪里阻塞、哪些结果等待验收。",
@@ -393,7 +393,7 @@ export function localizeRuntimeMessage(message: string, locale: Locale): string 
   if (locale === "en") return message;
   const unavailable = "Codex is unavailable, so Depthline is showing sample work.";
   if (message.startsWith(unavailable)) {
-    return `Codex 暂不可用，Depthline 正在显示示例任务。${message.slice(unavailable.length)}`;
+    return `Codex 暂不可用，守深正在显示示例任务。${message.slice(unavailable.length)}`;
   }
   const openFailure = "Could not open Codex.";
   if (message.startsWith(openFailure)) {

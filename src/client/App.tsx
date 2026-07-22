@@ -37,13 +37,15 @@ function focusMinutes(snapshot: DepthlineSnapshot): number {
   return Math.max(0, Math.ceil((new Date(snapshot.focus.until).getTime() - Date.now()) / 60_000));
 }
 
-function Logo() {
+function Logo({ locale = "en" }: { locale?: Locale }) {
+  const name = locale === "zh-CN" ? "守深" : "Depthline";
   return (
-    <div className="logo" aria-label="Depthline">
+    <div className="logo" aria-label={locale === "zh-CN" ? "守深 Depthline" : "Depthline"}>
       <span className="logo-mark" aria-hidden="true">
         <span />
       </span>
-      <span>Depthline</span>
+      <span>{name}</span>
+      {locale === "zh-CN" && <small>Depthline</small>}
     </div>
   );
 }
@@ -155,10 +157,10 @@ function EmptyLane({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LoadingScreen({ messages }: { messages: Copy }) {
+function LoadingScreen({ messages, locale }: { messages: Copy; locale: Locale }) {
   return (
     <main className="loading-screen">
-      <Logo />
+      <Logo locale={locale} />
       <div className="loading-line" />
       <p>{messages.loading}</p>
     </main>
@@ -414,14 +416,14 @@ export function App() {
     }
   };
 
-  if (!snapshot) return <LoadingScreen messages={messages} />;
+  if (!snapshot) return <LoadingScreen messages={messages} locale={locale} />;
 
   const remaining = focusMinutes(snapshot);
 
   return (
     <div className="app-shell">
       <header className="topbar">
-        <Logo />
+        <Logo locale={locale} />
         <div className="topbar-actions">
           <nav className="view-switch" aria-label={messages.navigationLabel}>
             <button aria-pressed={view === "work"} onClick={() => setView("work")}><LayoutList size={14} /> {messages.navigationWork}</button>
@@ -587,7 +589,7 @@ export function App() {
 
       <footer>
         <div>
-          <Logo />
+          <Logo locale={locale} />
           <p>{messages.footerVision}</p>
         </div>
         <p>{messages.footerPrivacy}</p>

@@ -49,7 +49,7 @@ export class CodexAppServerClient extends EventEmitter {
 
     try {
       await this.request("initialize", {
-        clientInfo: { name: "depthline", title: "Depthline", version: "0.1.0" },
+        clientInfo: { name: "depthline", title: "守深 · Depthline", version: "0.1.0" },
         capabilities: { experimentalApi: true },
       });
       this.notify("initialized", {});
